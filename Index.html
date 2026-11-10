@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dětský Sbor Žďáráček</title>
+    
+    <!-- Propojení s Manifestem pro instalaci na plochu -->
+    <link rel="manifest" href="manifest.json">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#6b1d2f">
+
+    <style>
+        :root {
+            --primary: #6b1d2f;
+            --primary-light: #8a253d;
+            --primary-glow: rgb(224, 163, 186);
+            
+            --bg-gradient: linear-gradient(135deg, #fce4ec 0%, #f8f9fa 50%, #e8eaf6 100%);
+            --card-bg: rgba(255, 255, 255, 0.75);
+            --card-border: rgba(255, 255, 255, 0.9);
+            --text-main: #2b2b2b;
+            --text-muted: #6c757d;
+            --tab-bg: rgba(255, 255, 255, 0.85);
+            --tab-border: rgba(255, 255, 255, 0.9);
+            --modal-bg: rgba(255, 255, 255, 0.92);
+            --input-bg: rgba(255, 255, 255, 0.85);
+            --shadow-glass: 0 10px 30px 0 rgba(107, 29, 47, 0.08);
+        }
+
+        body.dark-mode {
+            --bg-gradient: linear-gradient(135deg, #18090c 0%, #121215 50%, #0d1117 100%);
+            --card-bg: rgba(30, 26, 32, 0.65);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f0f0f2;
+            --text-muted: #a0a0ab;
+            --tab-bg: rgba(24, 18, 22, 0.8);
+            --tab-border: rgba(255, 255, 255, 0.12);
+            --modal-bg: rgba(26, 20, 24, 0.95);
+            --input-bg: rgba(45, 35, 42, 0.8);
+            --shadow-glass: 0 12px 40px 0 rgba(0, 0, 0, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            padding-bottom: 120px;
+            padding-top: 15px;
+            min-height: 100vh;
+            overflow-x: hidden;
+            transition: background 0.5s ease, color 0.3s ease;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Glassmorphism třída pro karty */
+        .glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow-glass);
+        }
+
+        .container {
+            padding: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .tab-content {
+            display: none;
+            opacity: 0;
+            transform: translateY(15px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .card {
+            border-radius: 24px;
+            padding: 20px;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: fadeInUp 0.5s ease both;
+        }
+
+        .card:active {
+            transform: scale(0.97);
+        }
+
+        .card h3 {
+            font-size: 1.15rem;
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        body.dark-mode .card h3 { color: #ff7597; }
+
+        .card p {
+            font-size: 0.92rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        .card .date {
+            font-size: 0.72rem;
+            color: var(--primary);
+            background: rgba(107, 29, 47, 0.1);
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        body.dark-mode .card .date {
+            color: #ff9ebb;
+            background: rgba(255, 117, 151, 0.15);
+        }
+
+        .song-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .song-info h4 { font-size: 1rem; color: var(--text-main); margin-bottom: 2px; font-weight: 600; }
+        .song-info span { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* Spodní Apple dock panel */
+        .nav-dock-wrapper {
+            position: fixed;
+            bottom: 25px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 0 20px;
+            z-index: 1000;
+            animation: bounceUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .nav-dock {
+            background: var(--tab-bg);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            border: 1px solid var(--tab-border);
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            border-radius: 36px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+        }
+
+        .nav-item {
+            background: transparent;
+            border: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 22px;
+            border-radius: 30px;
+            cursor: pointer;
+            color: var(--text-muted);
+            gap: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item svg { width: 24px; height: 24px; }
+        .nav-item span { font-size: 0.68rem; font-weight: 600; }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 6px 20px var(--primary-glow);
+            transform: translateY(-3px);
+        }
+
+        /* Modální okna s glass efektem */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: var(--modal-bg);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            width: 100%;
+            max-width: 600px;
+            border-top-left-radius: 36px;
+            border-top-right-radius: 36px;
+            border: 1px solid var(--card-border);
+            padding: 30px 24px 40px;
+            box-shadow: 0 -15px 40px rgba(0,0,0,0.3);
+            animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(150, 150, 150, 0.2);
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 1rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Přehrávač */
+        .player-cover {
+            width: 120px;
+            height: 120px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 25px var(--primary-glow);
+        }
+
+        .player-title { text-align: center; font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
+        .player-sub { text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 25px; }
+
+        .scrubber-container { margin-bottom: 25px; }
+        .scrubber {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: rgba(150, 150, 150, 0.3);
+            outline: none;
+        }
+        .scrubber::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .time-labels { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; font-weight: 600; }
+
+        .btn-modal-play {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            cursor: pointer;
+            box-shadow: 0 8px 25px var(--primary-glow);
+        }
+
+        /* Formulář */
+        .form-input {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-size: 0.95rem;
+            margin-top: 8px;
+            margin-bottom: 18px;
+            outline: none;
+        }
+
+        .voice-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .voice-btn, .theme-btn {
+            padding: 12px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .voice-btn.selected, .theme-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 14px var(--primary-glow);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            border-radius: 18px;
+            border: none;
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 8px 20px var(--primary-glow);
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes bounceUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- ZÁLOŽKA 1: AKTUALITY -->
+        <div id="tab-aktuality" class="tab-content active">
+            <div class="grid">
+                <div class="card glass">
+                    <span class="date">VÍTEJ V APLIKACI</span>
+                    <h3 id="user-greeting">Ahoj v našem sboru!</h3>
+                    <p>Zde se budou načítat novinky z GitHubu. Vše funguje plně offline a automaticky.</p>
+                </div>
+                <div class="card glass">
+                    <span class="date">DNES</span>
+                    <h3>Soustředění v Ledeči</h3>
+                    <p>Nezapomeňte si s sebou vzít přezůvky, teplé oblečení a dobrou náladu. Odjíždíme v pátek v 15:00 od klubovny.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ZÁLOŽKA 2: AUDIO -->
+        <div id="tab-audio" class="tab-content">
+            <div class="grid">
+                <div class="card glass song-card" onclick="openPlayer('Ukolébavka pro ranní slunce', 'Formát .opus • Sborová zkouška', 135, 'audio/ukolebavka.opus')">
+                    <div class="song-info">
+                        <h3>Ukolébavka pro ranní slunce</h3>
+                        <span>2:15 • Klikni pro přehrání</span>
+                    </div>
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--primary)"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+                <div class="card glass song-card" onclick="openPlayer('Jarní proud', 'Formát .opus • Rychlé tempo', 105, 'audio/jarni_proud.opus')">
+                    <div class="song-info">
+                        <h3>Jarní proud</h3>
+                        <span>1:45 • Klikni pro přehrání</span>
+                    </div>
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--primary)"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- ZÁLOŽKA 3: NASTAVENÍ -->
+        <div id="tab-nastaveni" class="tab-content">
+            <div class="grid">
+                <div class="card glass">
+                    <h3>Můj profil</h3>
+                    <p id="profile-info-text">Načítám...</p>
+                    <button class="voice-btn" style="width:100%; margin-top:12px;" onclick="openWelcomeModal()">Upravit profil</button>
+                </div>
+                <div class="card glass">
+                    <h3>Správa aplikace</h3>
+                    <p style="margin-bottom: 10px;">Stáhnout nejnovější nahrávky a aktuality z webu:</p>
+                    <button class="voice-btn" style="width:100%; background: var(--primary); color: white;" onclick="forceAppUpdate()">Aktualizovat aplikaci</button>
+                </div>
+                <div class="card glass">
+                    <h3>Vzhled aplikace</h3>
+                    <p style="margin-bottom: 10px;">Vyber motiv:</p>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+                        <button class="theme-btn" id="theme-light" onclick="setTheme('light')">Světlý</button>
+                        <button class="theme-btn" id="theme-dark" onclick="setTheme('dark')">Tmavý</button>
+                        <button class="theme-btn" id="theme-system" onclick="setTheme('system')">Systém</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Spodní dock -->
+    <div class="nav-dock-wrapper">
+        <div class="nav-dock">
+            <button class="nav-item active" onclick="switchTab('aktuality', event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Aktuality</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('audio', event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <span>Audio</span>
+            </button>
+            <button class="nav-item" onclick="switchTab('nastaveni', event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span>Nastavení</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modální přehrávač -->
+    <div id="player-modal" class="modal-overlay">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closePlayer()">✕</button>
+            <div class="player-cover">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+            </div>
+            <div class="player-title" id="modal-song-title">Název</div>
+            <div class="player-sub" id="modal-song-sub">Podnázev</div>
+            <div class="scrubber-container">
+                <input type="range" class="scrubber" id="song-scrubber" min="0" max="100" value="0" oninput="seekSong(this.value)">
+                <div class="time-labels">
+                    <span id="time-current">0:00</span>
+                    <span id="time-total">0:00</span>
+                </div>
+            </div>
+            <button class="btn-modal-play" id="modal-play-btn" onclick="toggleModalPlay()">
+                <svg id="play-icon" viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Modál prvního spuštění -->
+    <div id="welcome-modal" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="font-size: 1.2rem; margin-bottom: 5px;">Vítej v aplikaci sboru!</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px;">Zadej své jméno a vyber hlasovou skupinu.</p>
+            <label style="font-size: 0.75rem; font-weight: 700;">Jméno</label>
+            <input type="text" id="input-name" class="form-input" placeholder="Tvoje jméno...">
+            <label style="font-size: 0.75rem; font-weight: 700;">Hlas</label>
+            <div class="voice-grid">
+                <div class="voice-btn" onclick="selectVoice(this, 'Soprán')">Soprán</div>
+                <div class="voice-btn" onclick="selectVoice(this, 'Alt')">Alt</div>
+                <div class="voice-btn" onclick="selectVoice(this, 'Tenor')">Tenor</div>
+                <div class="voice-btn" onclick="selectVoice(this, 'Bas')">Bas</div>
+            </div>
+            <button class="btn-submit" onclick="saveWelcomeData()">Uložit</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedVoiceGroup = '';
+        let currentDuration = 0;
+        let isPlaying = false;
+        let timerInterval = null;
+        let audioObject = new Audio(); // Objekt pro přehrávání zvuku
+
+        // Registrace Service Workeru pro offline chod
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('Service Worker úspěšně zaregistrován:', reg.scope))
+                    .catch(err => console.log('Chyba registraci SW:', err));
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadProfileData();
+            if (!localStorage.getItem('sbor_has_launched')) {
+                openWelcomeModal();
+            }
+        });
+
+        function switchTab(tabId, event) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('tab-' + tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function openWelcomeModal() {
+            document.getElementById('welcome-modal').classList.add('active');
+        }
+
+        function selectVoice(btn, voice) {
+            document.querySelectorAll('.voice-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            selectedVoiceGroup = voice;
+        }
+
+        function saveWelcomeData() {
+            const name = document.getElementById('input-name').value.trim();
+            if (!name) { alert('Zadej jméno!'); return; }
+            if (!selectedVoiceGroup) { alert('Vyber hlas!'); return; }
+
+            localStorage.setItem('sbor_user_name', name);
+            localStorage.setItem('sbor_user_voice', selectedVoiceGroup);
+            localStorage.setItem('sbor_has_launched', 'true');
+
+            document.getElementById('welcome-modal').classList.remove('active');
+            loadProfileData();
+        }
+
+        function loadProfileData() {
+            const name = localStorage.getItem('sbor_user_name') || 'Zpěváku';
+            const voice = localStorage.getItem('sbor_user_voice') || 'Neuvedeno';
+            document.getElementById('user-greeting').innerText = `Ahoj ${name}!`;
+            document.getElementById('profile-info-text').innerHTML = `Jméno: <b>${name}</b><br>Hlas: <b>${voice}</b>`;
+        }
+
+        function openPlayer(title, sub, durationSeconds, audioSrc) {
+            document.getElementById('modal-song-title').innerText = title;
+            document.getElementById('modal-song-sub').innerText = sub;
+            currentDuration = durationSeconds;
+            
+            document.getElementById('song-scrubber').max = durationSeconds;
+            document.getElementById('song-scrubber').value = 0;
+            document.getElementById('time-current').innerText = "0:00";
+            document.getElementById('time-total').innerText = formatTime(durationSeconds);
+
+            if (audioSrc) {
+                audioObject.src = audioSrc;
+            }
+
+            document.getElementById('player-modal').classList.add('active');
+            pauseModalPlay();
+        }
+
+        function closePlayer() {
+            document.getElementById('player-modal').classList.remove('active');
+            pauseModalPlay();
+        }
+
+        function toggleModalPlay() {
+            isPlaying ? pauseModalPlay() : startModalPlay();
+        }
+
+        function startModalPlay() {
+            isPlaying = true;
+            document.getElementById('play-icon').innerHTML = `<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>`;
+            if (audioObject.src) audioObject.play().catch(e => console.log('Přehrávání pozastaveno:', e));
+            
+            timerInterval = setInterval(() => {
+                let scrubber = document.getElementById('song-scrubber');
+                let val = parseInt(scrubber.value);
+                if (val < currentDuration) {
+                    scrubber.value = val + 1;
+                    document.getElementById('time-current').innerText = formatTime(val + 1);
+                } else {
+                    pauseModalPlay();
+                }
+            }, 1000);
+        }
+
+        function pauseModalPlay() {
+            isPlaying = false;
+            document.getElementById('play-icon').innerHTML = `<path d="M8 5v14l11-7z"/>`;
+            if (audioObject.src) audioObject.pause();
+            clearInterval(timerInterval);
+        }
+
+        function seekSong(val) {
+            document.getElementById('time-current').innerText = formatTime(val);
+            if (audioObject.src && audioObject.duration) {
+                audioObject.currentTime = val;
+            }
+        }
+
+        function formatTime(secs) {
+            let m = Math.floor(secs / 60);
+            let s = secs % 60;
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('sbor_theme') || 'system';
+            setTheme(savedTheme);
+        }
+
+        function setTheme(theme) {
+            localStorage.setItem('sbor_theme', theme);
+            document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById('theme-' + theme);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            if (theme === 'dark') {
+                document.body.classList.add('dark-mode');
+            } else if (theme === 'light') {
+                document.body.classList.remove('dark-mode');
+            } else {
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    document.body.classList.add('dark-mode');
+                } else {
+                    document.body.classList.remove('dark-mode');
+                }
+            }
+        }
+
+        // Vynucená aktualizace aplikace a mezipaměti
+        function forceAppUpdate() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    for (let registration of registrations) {
+                        registration.update();
+                    }
+                });
+            }
+            caches.keys().then(names => {
+                for (let name of names) {
+                    caches.delete(name);
+                }
+            }).then(() => {
+                alert('Aplikace byla zkontrolována a aktualizována na nejnovější verzi!');
+                window.location.reload(true);
+            });
+        }
+    </script>
+</body>
+</html>
