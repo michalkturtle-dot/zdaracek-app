@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Žďáráček</title>
+    <title>Dětský Sbor Žďáráček</title>
     
     <!-- Propojení s Manifestem pro instalaci na plochu -->
     <link rel="manifest" href="manifest.json">
@@ -11,6 +11,10 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#6b1d2f">
+
+    <!-- Firebase SDK (Version 9 Compatibility Mode pro snadný JS) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
         :root {
@@ -101,6 +105,7 @@
             padding: 20px;
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             animation: fadeInUp 0.5s ease both;
+            position: relative;
         }
 
         .card.clickable {
@@ -142,6 +147,23 @@
             background: rgba(255, 117, 151, 0.15);
         }
 
+        .btn-delete-news {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 59, 48, 0.15);
+            color: #ff3b30;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+
         .song-card {
             display: flex;
             align-items: center;
@@ -152,7 +174,28 @@
         .song-info h4 { font-size: 1rem; color: var(--text-main); margin-bottom: 2px; font-weight: 600; }
         .song-info span { font-size: 0.8rem; color: var(--text-muted); }
 
-        /* Spodní Apple dock panel */
+        .aktuality-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .btn-add-news {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
         .nav-dock-wrapper {
             position: fixed;
             bottom: 25px;
@@ -204,7 +247,6 @@
             transform: translateY(-3px);
         }
 
-        /* Červená tečka pro notifikaci aktualizace */
         .update-dot {
             position: absolute;
             top: 6px;
@@ -217,7 +259,6 @@
             display: none;
         }
 
-        /* Modální okna s glass efektem */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -280,7 +321,37 @@
             font-weight: 700;
         }
 
-        /* Tematický přehrávač s posuvníkem */
+        .editor-toolbar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .tool-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: var(--primary);
+        }
+
+        .editor-textarea {
+            width: 100%;
+            height: 120px;
+            padding: 14px 16px;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-size: 0.95rem;
+            margin-bottom: 18px;
+            outline: none;
+            resize: none;
+        }
+
         .player-box {
             background: var(--input-bg);
             border: 1px solid var(--card-border);
@@ -352,13 +423,6 @@
             font-weight: 600;
         }
 
-        .action-btn-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
         .download-btn, .open-btn {
             display: flex;
             align-items: center;
@@ -384,7 +448,6 @@
 
         body.dark-mode .open-btn { color: #ff7597; }
 
-        /* Vnitřní plovoucí lišta uvnitř modálního okna */
         .modal-dock-wrapper {
             position: absolute;
             bottom: 15px;
@@ -434,14 +497,9 @@
             transform: translateY(-2px);
         }
 
-        .modal-section {
-            display: none;
-        }
-        .modal-section.active {
-            display: block;
-        }
+        .modal-section { display: none; }
+        .modal-section.active { display: block; }
 
-        /* Formulář a přepínače */
         .form-input {
             width: 100%;
             padding: 14px 16px;
@@ -451,7 +509,7 @@
             color: var(--text-main);
             font-size: 0.95rem;
             margin-top: 8px;
-            margin-bottom: 18px;
+            margin-bottom: 14px;
             outline: none;
         }
 
@@ -494,7 +552,6 @@
             box-shadow: 0 8px 20px var(--primary-glow);
         }
 
-        /* Styl pro učitelský přepínač */
         .toggle-row {
             display: flex;
             align-items: center;
@@ -513,11 +570,7 @@
             height: 28px;
         }
 
-        .switch input { 
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
+        .switch input { opacity: 0; width: 0; height: 0; }
 
         .slider {
             position: absolute;
@@ -531,22 +584,15 @@
         .slider:before {
             position: absolute;
             content: "";
-            height: 20px;
-            width: 20px;
-            left: 4px;
-            bottom: 4px;
+            height: 20px; width: 20px;
+            left: 4px; bottom: 4px;
             background-color: white;
             transition: .3s;
             border-radius: 50%;
         }
 
-        input:checked + .slider {
-            background-color: var(--primary);
-        }
-
-        input:checked + .slider:before {
-            transform: translateX(22px);
-        }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(22px); }
 
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
@@ -569,24 +615,21 @@
     <div class="container">
         <!-- ZÁLOŽKA 1: AKTUALITY -->
         <div id="tab-aktuality" class="tab-content active">
-            <div class="grid">
-                <div class="card glass clickable" onclick="openNewsModal('Vítej v aplikaci', 'Zde se budou načítat novinky z GitHubu. Vše funguje plně offline a automaticky.')">
-                    <span class="date">VÍTEJ V APLIKACI</span>
-                    <h3 id="user-greeting">Ahoj v našem sboru!</h3>
-                    <p>Zde se budou načítat novinky z GitHubu. Klikni pro více informací.</p>
-                </div>
-                <div class="card glass clickable" onclick="openNewsModal('Soustředění v Ledeči', 'Nezapomeňte si s sebou vzít přezůvky, teplé oblečení a dobrou náladu. Odjíždíme v pátek v 15:00 od klubovny. V Ledeči na nás čeká intenzivní zkoušení sboru a spousta legrace!')">
-                    <span class="date">DNES</span>
-                    <h3>Soustředění v Ledeči</h3>
-                    <p>Nezapomeňte si s sebou vzít přezůvky, teplé oblečení a dobrou náladu. Klikni pro podrobnosti.</p>
-                </div>
+            <div class="aktuality-header">
+                <h2 style="font-size: 1.2rem; font-weight: 800;">Aktuality sboru</h2>
+                <button id="btn-add-news-trigger" class="btn-add-news" style="display:none;" onclick="openEditorModal()">
+                    ✏️ Přidat aktualitu
+                </button>
+            </div>
+
+            <div class="grid" id="news-grid-container">
+                <!-- Zde se načítají novinky z databáze Firestore -->
             </div>
         </div>
 
         <!-- ZÁLOŽKA 2: AUDIO -->
         <div id="tab-audio" class="tab-content">
             <div class="grid">
-                <!-- Písnička 1 -->
                 <div class="card glass song-card" onclick="openSongModal('God Rest Ye Merry Gentlemen', { 'Soprán': 'audio/god-sopran.mp3', 'Alt': 'audio/god-alt.mp3', 'Tenor': 'audio/god-tenor.mp3', 'Bas': 'audio/god-bas.mp3' }, null, 'pdf/god-noty.pdf')">
                     <div class="song-info">
                         <h3>God Rest Ye Merry Gentlemen</h3>
@@ -594,7 +637,6 @@
                     </div>
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--primary)"><path d="M8 5v14l11-7z"/></svg>
                 </div>
-                <!-- Písnička 2 -->
                 <div class="card glass song-card" onclick="openSongModal('Adeste fideles', { 'Soprán': 'audio/adeste-sopran.mp3', 'Alt': 'audio/adeste-alt.mp3', 'Tenor': 'audio/adeste-tenor.mp3', 'Bas': 'audio/adeste-bas.mp3' }, { 'Doprovod': 'audio/adeste-podklad.mp3' }, 'pdf/adeste-noty.pdf')">
                     <div class="song-info">
                         <h3>Adeste fideles</h3>
@@ -613,16 +655,21 @@
                     <p id="profile-info-text">Načítám...</p>
                     <button class="voice-btn" style="width:100%; margin-top:12px;" onclick="openWelcomeModal()">Upravit profil</button>
                 </div>
-                <!-- Učitelský / Vícehlasý režim -->
                 <div class="card glass">
-                    <h3>Režim pro učitele</h3>
-                    <p style="margin-bottom: 5px;">Zobrazit všechny hlasové party najednou u každé písničky:</p>
-                    <div class="toggle-row">
-                        <span style="font-weight: 600; font-size: 0.9rem;">Vícehlasý režim</span>
-                        <label class="switch">
-                            <input type="checkbox" id="teacher-mode-toggle" onchange="toggleTeacherMode(this)">
-                            <span class="slider"></span>
-                        </label>
+                    <h3>Učitelský přístup</h3>
+                    <p style="margin-bottom: 8px;">Zadej heslo pro učitelské funkce (editace aktualit, vícehlasý režim):</p>
+                    <input type="password" id="input-teacher-password" class="form-input" placeholder="Zadej heslo..." style="margin-bottom: 10px;">
+                    <button class="voice-btn" style="width:100%; background: var(--primary); color: white;" onclick="verifyTeacherPassword()">Přihlásit učitele</button>
+                    <p id="teacher-auth-status" style="font-size: 0.8rem; margin-top: 8px; font-weight: 700;"></p>
+
+                    <div id="teacher-options-wrapper" style="display:none; margin-top:15px; border-top: 1px dashed var(--card-border); padding-top: 15px;">
+                        <div class="toggle-row">
+                            <span style="font-weight: 600; font-size: 0.9rem;">Vícehlasý režim</span>
+                            <label class="switch">
+                                <input type="checkbox" id="teacher-mode-toggle" onchange="toggleTeacherMode(this)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
                 <div class="card glass">
@@ -657,9 +704,34 @@
             <button class="nav-item" onclick="switchTab('nastaveni', event)" id="nav-btn-settings">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 <span>Nastavení</span>
-                <!-- Červená tečka pro aktualizaci -->
                 <div class="update-dot" id="update-notification-dot"></div>
             </button>
+        </div>
+    </div>
+
+    <!-- Modální okno: Editor aktualit pro učitele -->
+    <div id="editor-modal" class="modal-overlay">
+        <div class="modal-card" style="padding-bottom: 40px;">
+            <button class="modal-close" onclick="closeEditorModal()">✕</button>
+            <h3 style="font-size: 1.2rem; margin-bottom: 15px; color: var(--primary);">Přidat novou aktualitu</h3>
+            
+            <label style="font-size: 0.75rem; font-weight: 700;">Štítek / Datum (např. VÍTEJ V APLIKACI / DNES)</label>
+            <input type="text" id="editor-tag" class="form-input" placeholder="Štítek..." value="DNES">
+
+            <label style="font-size: 0.75rem; font-weight: 700;">Hlavní nadpis</label>
+            <input type="text" id="editor-title" class="form-input" placeholder="Nadpis...">
+
+            <label style="font-size: 0.75rem; font-weight: 700;">Stručný popis na kartě</label>
+            <input type="text" id="editor-short" class="form-input" placeholder="Stručný popis...">
+
+            <label style="font-size: 0.75rem; font-weight: 700;">Detailní popis (po rozkliknutí)</label>
+            <div class="editor-toolbar">
+                <button class="tool-btn" onclick="insertFormat('bold')">B (Bordo Tučné)</button>
+                <button class="tool-btn" onclick="insertFormat('bullet')">• Odrážka</button>
+            </div>
+            <textarea id="editor-full" class="editor-textarea" placeholder="Detailní text aktuality..."></textarea>
+
+            <button class="btn-submit" onclick="publishNews()">Publikovat všem</button>
         </div>
     </div>
 
@@ -668,18 +740,17 @@
         <div class="modal-card" style="padding-bottom: 40px;">
             <button class="modal-close" onclick="closeNewsModal()">✕</button>
             <h3 id="modal-news-title" style="font-size: 1.3rem; margin-bottom: 12px; color: var(--primary);">Titulek</h3>
-            <p id="modal-news-text" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main);">Text aktuality...</p>
+            <div id="modal-news-text" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main);">Text aktuality...</div>
         </div>
     </div>
 
-    <!-- Modální okno pro detail písničky s vlastní vnitřní lištou -->
+    <!-- Modální okno pro detail písničky -->
     <div id="song-modal" class="modal-overlay">
         <div class="modal-card">
             <button class="modal-close" onclick="closeSongModal()">✕</button>
             <h3 id="modal-song-title" style="font-size: 1.3rem; margin-bottom: 4px;">Název písně</h3>
             <p id="modal-user-voice-label" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Přehrát part</p>
             
-            <!-- SEKCE 1: AUDIO -->
             <div id="modal-sec-audio" class="modal-section active">
                 <div class="section-title" id="audio-section-header">Tvůj hlas</div>
                 <div id="modal-voice-container"></div>
@@ -690,7 +761,6 @@
                 </div>
             </div>
 
-            <!-- SEKCE 2: STAŽENÍ NOT -->
             <div id="modal-sec-download" class="modal-section">
                 <div class="section-title">Stažení a zobrazení not</div>
                 <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">Můžeš si noty rovnou otevřít v prohlížeči nebo stáhnout do zařízení:</p>
@@ -706,7 +776,6 @@
                 </a>
             </div>
 
-            <!-- Vnitřní plovoucí lišta uvnitř modálního okna -->
             <div class="modal-dock-wrapper">
                 <div class="modal-dock">
                     <button class="modal-nav-item active" onclick="switchModalSection('audio', event)">
@@ -741,47 +810,181 @@
     </div>
 
     <script>
+        // === NASTAVENÍ FIREBASE (S TVÝMI KLÍČI) ===
+        const firebaseConfig = {
+            apiKey: "AIzaSyAnmWp8zCp8wLOgSAwN_mb_uLpFvASBiCQ",
+            authDomain: "zdaracek-app.firebaseapp.com",
+            projectId: "zdaracek-app",
+            storageBucket: "zdaracek-app.firebasestorage.app",
+            messagingSenderId: "369201752333",
+            appId: "1:369201752333:web:8b77821b485d9e2a59a844"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         let selectedVoiceGroup = '';
         let audioObject = new Audio();
         let currentPlayingPlayer = null;
         let updateInterval = null;
 
-        // Aktuální verze aplikace (pro kontrolu aktualizací)
-        const CURRENT_APP_VERSION = '1.2';
-
-        // Registrace Service Workeru a kontrola aktualizací
+        // Registrace Service Workeru
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
                     .then(reg => {
-                        console.log('Service Worker úspěšně zaregistrován:', reg.scope);
-                        
-                        // Kontrola, zda je k dispozici nová verze
                         reg.onupdatefound = () => {
                             const installingWorker = reg.installing;
                             installingWorker.onstatechange = () => {
-                                if (installingWorker.state === 'installed') {
-                                    if (navigator.serviceWorker.controller) {
-                                        // Nová verze je připravená -> ukážeme červenou tečku u Nastavení
-                                        document.getElementById('update-notification-dot').style.display = 'block';
-                                    }
+                                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    document.getElementById('update-notification-dot').style.display = 'block';
                                 }
                             };
                         };
-                    })
-                    .catch(err => console.log('Chyba registrace SW:', err));
+                    });
             });
         }
 
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
             loadProfileData();
-            initTeacherModeToggle();
+            initTeacherState();
+            listenToNews();
             
             if (!localStorage.getItem('sbor_has_launched')) {
                 openWelcomeModal();
             }
         });
+
+        // Živé načítání aktualit z Firebase Firestore
+        function listenToNews() {
+            db.collection("news").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+                const container = document.getElementById('news-grid-container');
+                container.innerHTML = '';
+
+                if (snapshot.empty) {
+                    container.innerHTML = '<div class="card glass"><p>Zatím zde nejsou žádné aktuality.</p></div>';
+                    return;
+                }
+
+                const isTeacher = localStorage.getItem('sbor_is_teacher') === 'true';
+
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    const newsId = doc.id;
+
+                    const card = document.createElement('div');
+                    card.className = 'card glass clickable';
+                    
+                    let deleteBtnHTML = isTeacher ? `<button class="btn-delete-news" onclick="deleteNews('${newsId}', event)">🗑️</button>` : '';
+
+                    card.innerHTML = `
+                        ${deleteBtnHTML}
+                        <span class="date">${item.tag || 'AKTUALITA'}</span>
+                        <h3>${item.title}</h3>
+                        <p>${item.shortDesc}</p>
+                    `;
+
+                    card.onclick = (e) => {
+                        if (e.target.classList.contains('btn-delete-news')) return;
+                        openNewsModal(item.title, item.fullDesc);
+                    };
+
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        // Přihlašovací heslo "html"
+        function verifyTeacherPassword() {
+            const pwd = document.getElementById('input-teacher-password').value.trim();
+            const status = document.getElementById('teacher-auth-status');
+            
+            if (pwd === 'html') {
+                localStorage.setItem('sbor_is_teacher', 'true');
+                status.style.color = '#34c759';
+                status.innerText = '✓ Přihlášen jako učitel!';
+                initTeacherState();
+                listenToNews();
+            } else {
+                status.style.color = '#ff3b30';
+                status.innerText = '✕ Špatné heslo!';
+            }
+        }
+
+        function initTeacherState() {
+            const isTeacher = localStorage.getItem('sbor_is_teacher') === 'true';
+            document.getElementById('btn-add-news-trigger').style.display = isTeacher ? 'flex' : 'none';
+            document.getElementById('teacher-options-wrapper').style.display = isTeacher ? 'block' : 'none';
+            
+            const isTeacherMode = localStorage.getItem('sbor_teacher_mode') === 'true';
+            const toggle = document.getElementById('teacher-mode-toggle');
+            if (toggle) toggle.checked = isTeacherMode;
+        }
+
+        function openEditorModal() {
+            document.getElementById('editor-modal').classList.add('active');
+        }
+        function closeEditorModal() {
+            document.getElementById('editor-modal').classList.remove('active');
+        }
+
+        function insertFormat(type) {
+            const textarea = document.getElementById('editor-full');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+
+            if (type === 'bold') {
+                const selectedText = text.substring(start, end) || 'text';
+                const replacement = `<b style="color:var(--primary);">${selectedText}</b>`;
+                textarea.value = text.substring(0, start) + replacement + text.substring(end);
+            } else if (type === 'bullet') {
+                const replacement = `\n• `;
+                textarea.value = text.substring(0, start) + replacement + text.substring(end);
+            }
+        }
+
+        function publishNews() {
+            const tag = document.getElementById('editor-tag').value.trim();
+            const title = document.getElementById('editor-title').value.trim();
+            const shortDesc = document.getElementById('editor-short').value.trim();
+            const fullDesc = document.getElementById('editor-full').value.trim();
+
+            if (!title || !shortDesc || !fullDesc) {
+                alert('Vyplň prosím všechna pole!');
+                return;
+            }
+
+            db.collection("news").add({
+                tag: tag.toUpperCase() || 'DNES',
+                title: title,
+                shortDesc: shortDesc,
+                fullDesc: fullDesc,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                closeEditorModal();
+                document.getElementById('editor-title').value = '';
+                document.getElementById('editor-short').value = '';
+                document.getElementById('editor-full').value = '';
+            }).catch(err => alert('Chyba publikace: ' + err));
+        }
+
+        function deleteNews(newsId, event) {
+            event.stopPropagation();
+            if (confirm('Opravdu chceš tuto aktualitu smazat pro všechny?')) {
+                db.collection("news").doc(newsId).delete();
+            }
+        }
+
+        function openNewsModal(title, textHTML) {
+            document.getElementById('modal-news-title').innerText = title;
+            document.getElementById('modal-news-text').innerHTML = textHTML;
+            document.getElementById('news-modal').classList.add('active');
+        }
+
+        function closeNewsModal() {
+            document.getElementById('news-modal').classList.remove('active');
+        }
 
         function switchTab(tabId, event) {
             stopAudio();
@@ -825,33 +1028,13 @@
         function loadProfileData() {
             const name = localStorage.getItem('sbor_user_name') || 'Zpěváku';
             const voice = localStorage.getItem('sbor_user_voice') || 'Neuvedeno';
-            document.getElementById('user-greeting').innerText = `Ahoj ${name}!`;
             document.getElementById('profile-info-text').innerHTML = `Jméno: <b>${name}</b><br>Hlas: <b>${voice}</b>`;
         }
 
-        // Otevření detailu aktuality v modálním okně
-        function openNewsModal(title, text) {
-            document.getElementById('modal-news-title').innerText = title;
-            document.getElementById('modal-news-text').innerText = text;
-            document.getElementById('news-modal').classList.add('active');
-        }
-
-        function closeNewsModal() {
-            document.getElementById('news-modal').classList.remove('active');
-        }
-
-        // Správa učitelského (vícehlasého) režimu
         function toggleTeacherMode(checkbox) {
             localStorage.setItem('sbor_teacher_mode', checkbox.checked ? 'true' : 'false');
         }
 
-        function initTeacherModeToggle() {
-            const isTeacher = localStorage.getItem('sbor_teacher_mode') === 'true';
-            const toggle = document.getElementById('teacher-mode-toggle');
-            if (toggle) toggle.checked = isTeacher;
-        }
-
-        // Vytvoření HTML pro tematický přehrávač s posuvníkem
         function createPlayerHTML(title, src) {
             const playerId = 'player_' + Math.random().toString(36).substring(2, 9);
             return `
@@ -873,7 +1056,6 @@
             `;
         }
 
-        // Otevření detailu písničky (podle toho, zda je zapnutý učitelský režim)
         function openSongModal(title, voices, accompaniments, pdfUrl) {
             stopAudio();
             document.getElementById('modal-song-title').innerText = title;
@@ -890,19 +1072,15 @@
             voiceContainer.innerHTML = '';
 
             if (isTeacherMode) {
-                // Učitelský režim: Zobrazí všechny hlasy najednou
                 document.getElementById('modal-user-voice-label').innerText = 'Vícehlasý režim (Učitel)';
                 document.getElementById('audio-section-header').innerText = 'Všechny hlasy';
-
                 for (let [voiceName, src] of Object.entries(voices)) {
                     voiceContainer.innerHTML += createPlayerHTML(voiceName, src);
                 }
             } else {
-                // Normální režim: Zobrazí pouze hlas daného uživatele
                 const userVoice = localStorage.getItem('sbor_user_voice') || 'Soprán';
                 document.getElementById('modal-user-voice-label').innerText = `Přehrát tvůj part: ${userVoice}`;
                 document.getElementById('audio-section-header').innerText = 'Tvůj hlas';
-
                 const voiceSrc = voices[userVoice];
                 if (voiceSrc) {
                     voiceContainer.innerHTML += createPlayerHTML(`${userVoice} (Tvůj part)`, voiceSrc);
@@ -911,7 +1089,6 @@
                 }
             }
 
-            // Doprovody (pokud existují)
             const accWrapper = document.getElementById('modal-accompaniment-wrapper');
             const accContainer = document.getElementById('modal-accompaniment-container');
             if (accompaniments) {
@@ -932,7 +1109,6 @@
             document.getElementById('song-modal').classList.remove('active');
         }
 
-        // Ovládání přehrávače s posuvníkem
         function togglePlayer(src, playerId) {
             const playerBox = document.getElementById(playerId);
             const playSvg = playerBox.querySelector('.play-icon-svg');
@@ -1027,7 +1203,6 @@
             }
         }
 
-        // Vynucená aktualizace aplikace a mezipaměti
         function forceAppUpdate() {
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(registrations => {
