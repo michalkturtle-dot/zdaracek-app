@@ -103,7 +103,11 @@
             animation: fadeInUp 0.5s ease both;
         }
 
-        .card:active {
+        .card.clickable {
+            cursor: pointer;
+        }
+
+        .card.clickable:active {
             transform: scale(0.97);
         }
 
@@ -148,7 +152,7 @@
         .song-info h4 { font-size: 1rem; color: var(--text-main); margin-bottom: 2px; font-weight: 600; }
         .song-info span { font-size: 0.8rem; color: var(--text-muted); }
 
-        /* Spodní Apple dock panel (hlavní) */
+        /* Spodní Apple dock panel */
         .nav-dock-wrapper {
             position: fixed;
             bottom: 25px;
@@ -171,6 +175,7 @@
             padding: 8px;
             border-radius: 36px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+            position: relative;
         }
 
         .nav-item {
@@ -186,6 +191,7 @@
             color: var(--text-muted);
             gap: 3px;
             transition: all 0.3s ease;
+            position: relative;
         }
 
         .nav-item svg { width: 24px; height: 24px; }
@@ -196,6 +202,19 @@
             color: white;
             box-shadow: 0 6px 20px var(--primary-glow);
             transform: translateY(-3px);
+        }
+
+        /* Červená tečka pro notifikaci aktualizace */
+        .update-dot {
+            position: absolute;
+            top: 6px;
+            right: 18px;
+            width: 10px;
+            height: 10px;
+            background-color: #ff3b30;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            display: none;
         }
 
         /* Modální okna s glass efektem */
@@ -227,7 +246,7 @@
             border-top-left-radius: 36px;
             border-top-right-radius: 36px;
             border: 1px solid var(--card-border);
-            padding: 30px 24px 110px; /* Dostatečný prostor pro vnitřní lištu */
+            padding: 30px 24px 110px;
             box-shadow: 0 -15px 40px rgba(0,0,0,0.3);
             animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
@@ -333,7 +352,14 @@
             font-weight: 600;
         }
 
-        .download-btn {
+        .action-btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .download-btn, .open-btn {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -345,14 +371,20 @@
             background: var(--primary);
             color: white;
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.95rem;
             text-decoration: none;
-            margin-top: 10px;
             box-shadow: 0 4px 14px var(--primary-glow);
             transition: all 0.2s ease;
         }
 
-        /* Vnitřní plovoucí lišta uvnitř modálního okna (připnutá dole v okně s vysokým z-indexem) */
+        .open-btn {
+            background: var(--input-bg);
+            color: var(--primary);
+        }
+
+        body.dark-mode .open-btn { color: #ff7597; }
+
+        /* Vnitřní plovoucí lišta uvnitř modálního okna */
         .modal-dock-wrapper {
             position: absolute;
             bottom: 15px;
@@ -361,11 +393,11 @@
             display: flex;
             justify-content: center;
             z-index: 3000;
-            pointer-events: none; /* Aby neblokovala kliknutí vedle */
+            pointer-events: none;
         }
 
         .modal-dock {
-            pointer-events: auto; /* Povolení klikání na samotnou lištu */
+            pointer-events: auto;
             background: var(--tab-bg);
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
@@ -409,7 +441,7 @@
             display: block;
         }
 
-        /* Formulář */
+        /* Formulář a přepínače */
         .form-input {
             width: 100%;
             padding: 14px 16px;
@@ -462,6 +494,60 @@
             box-shadow: 0 8px 20px var(--primary-glow);
         }
 
+        /* Styl pro učitelský přepínač */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            padding: 14px 16px;
+            border-radius: 16px;
+            margin-top: 10px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .3s;
+            border-radius: 28px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--primary);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
         @keyframes fadeInUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -484,15 +570,15 @@
         <!-- ZÁLOŽKA 1: AKTUALITY -->
         <div id="tab-aktuality" class="tab-content active">
             <div class="grid">
-                <div class="card glass">
+                <div class="card glass clickable" onclick="openNewsModal('Vítej v aplikaci', 'Zde se budou načítat novinky z GitHubu. Vše funguje plně offline a automaticky.')">
                     <span class="date">VÍTEJ V APLIKACI</span>
                     <h3 id="user-greeting">Ahoj v našem sboru!</h3>
-                    <p>Zde se budou načítat novinky z GitHubu. Vše funguje plně offline a automaticky.</p>
+                    <p>Zde se budou načítat novinky z GitHubu. Klikni pro více informací.</p>
                 </div>
-                <div class="card glass">
+                <div class="card glass clickable" onclick="openNewsModal('Soustředění v Ledeči', 'Nezapomeňte si s sebou vzít přezůvky, teplé oblečení a dobrou náladu. Odjíždíme v pátek v 15:00 od klubovny. V Ledeči na nás čeká intenzivní zkoušení sboru a spousta legrace!')">
                     <span class="date">DNES</span>
                     <h3>Soustředění v Ledeči</h3>
-                    <p>Nezapomeňte si s sebou vzít přezůvky, teplé oblečení a dobrou náladu. Odjíždíme v pátek v 15:00 od klubovny.</p>
+                    <p>Nezapomeňte si s sebou vzít přezůvky, teplé oblečení a dobrou náladu. Klikni pro podrobnosti.</p>
                 </div>
             </div>
         </div>
@@ -504,7 +590,7 @@
                 <div class="card glass song-card" onclick="openSongModal('God Rest Ye Merry Gentlemen', { 'Soprán': 'audio/god-sopran.mp3', 'Alt': 'audio/god-alt.mp3', 'Tenor': 'audio/god-tenor.mp3', 'Bas': 'audio/god-bas.mp3' }, null, 'pdf/god-noty.pdf')">
                     <div class="song-info">
                         <h3>God Rest Ye Merry Gentlemen</h3>
-                        <span>4 hlasy • Přehrát tvůj hlas</span>
+                        <span>4 hlasy • Přehrát nahrávku</span>
                     </div>
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--primary)"><path d="M8 5v14l11-7z"/></svg>
                 </div>
@@ -512,7 +598,7 @@
                 <div class="card glass song-card" onclick="openSongModal('Adeste fideles', { 'Soprán': 'audio/adeste-sopran.mp3', 'Alt': 'audio/adeste-alt.mp3', 'Tenor': 'audio/adeste-tenor.mp3', 'Bas': 'audio/adeste-bas.mp3' }, { 'Doprovod': 'audio/adeste-podklad.mp3' }, 'pdf/adeste-noty.pdf')">
                     <div class="song-info">
                         <h3>Adeste fideles</h3>
-                        <span>4 hlasy + doprovod • Přehrát tvůj hlas</span>
+                        <span>4 hlasy + doprovod • Přehrát nahrávku</span>
                     </div>
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--primary)"><path d="M8 5v14l11-7z"/></svg>
                 </div>
@@ -526,6 +612,18 @@
                     <h3>Můj profil</h3>
                     <p id="profile-info-text">Načítám...</p>
                     <button class="voice-btn" style="width:100%; margin-top:12px;" onclick="openWelcomeModal()">Upravit profil</button>
+                </div>
+                <!-- Učitelský / Vícehlasý režim -->
+                <div class="card glass">
+                    <h3>Režim pro učitele</h3>
+                    <p style="margin-bottom: 5px;">Zobrazit všechny hlasové party najednou u každé písničky:</p>
+                    <div class="toggle-row">
+                        <span style="font-weight: 600; font-size: 0.9rem;">Vícehlasý režim</span>
+                        <label class="switch">
+                            <input type="checkbox" id="teacher-mode-toggle" onchange="toggleTeacherMode(this)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="card glass">
                     <h3>Správa aplikace</h3>
@@ -556,10 +654,21 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
                 <span>Audio</span>
             </button>
-            <button class="nav-item" onclick="switchTab('nastaveni', event)">
+            <button class="nav-item" onclick="switchTab('nastaveni', event)" id="nav-btn-settings">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 <span>Nastavení</span>
+                <!-- Červená tečka pro aktualizaci -->
+                <div class="update-dot" id="update-notification-dot"></div>
             </button>
+        </div>
+    </div>
+
+    <!-- Modální okno pro detail aktuality -->
+    <div id="news-modal" class="modal-overlay">
+        <div class="modal-card" style="padding-bottom: 40px;">
+            <button class="modal-close" onclick="closeNewsModal()">✕</button>
+            <h3 id="modal-news-title" style="font-size: 1.3rem; margin-bottom: 12px; color: var(--primary);">Titulek</h3>
+            <p id="modal-news-text" style="font-size: 0.95rem; line-height: 1.6; color: var(--text-main);">Text aktuality...</p>
         </div>
     </div>
 
@@ -568,11 +677,11 @@
         <div class="modal-card">
             <button class="modal-close" onclick="closeSongModal()">✕</button>
             <h3 id="modal-song-title" style="font-size: 1.3rem; margin-bottom: 4px;">Název písně</h3>
-            <p id="modal-user-voice-label" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Přehrát tvůj part</p>
+            <p id="modal-user-voice-label" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 20px;">Přehrát part</p>
             
             <!-- SEKCE 1: AUDIO -->
             <div id="modal-sec-audio" class="modal-section active">
-                <div class="section-title">Tvůj hlas</div>
+                <div class="section-title" id="audio-section-header">Tvůj hlas</div>
                 <div id="modal-voice-container"></div>
 
                 <div id="modal-accompaniment-wrapper" style="display:none;">
@@ -583,8 +692,14 @@
 
             <!-- SEKCE 2: STAŽENÍ NOT -->
             <div id="modal-sec-download" class="modal-section">
-                <div class="section-title">Stažení not</div>
-                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">Stáhni si notový materiál v PDF formátu do svého zařízení:</p>
+                <div class="section-title">Stažení a zobrazení not</div>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px;">Můžeš si noty rovnou otevřít v prohlížeči nebo stáhnout do zařízení:</p>
+                
+                <a id="modal-open-btn" href="#" target="_blank" class="open-btn" style="margin-bottom: 10px;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                    Otevřít noty v prohlížeči
+                </a>
+
                 <a id="modal-download-btn" href="#" class="download-btn" download>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     Stáhnout noty (PDF)
@@ -631,18 +746,38 @@
         let currentPlayingPlayer = null;
         let updateInterval = null;
 
-        // Registrace Service Workeru pro offline chod
+        // Aktuální verze aplikace (pro kontrolu aktualizací)
+        const CURRENT_APP_VERSION = '1.2';
+
+        // Registrace Service Workeru a kontrola aktualizací
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Service Worker úspěšně zaregistrován:', reg.scope))
-                    .catch(err => console.log('Chyba registraci SW:', err));
+                    .then(reg => {
+                        console.log('Service Worker úspěšně zaregistrován:', reg.scope);
+                        
+                        // Kontrola, zda je k dispozici nová verze
+                        reg.onupdatefound = () => {
+                            const installingWorker = reg.installing;
+                            installingWorker.onstatechange = () => {
+                                if (installingWorker.state === 'installed') {
+                                    if (navigator.serviceWorker.controller) {
+                                        // Nová verze je připravená -> ukážeme červenou tečku u Nastavení
+                                        document.getElementById('update-notification-dot').style.display = 'block';
+                                    }
+                                }
+                            };
+                        };
+                    })
+                    .catch(err => console.log('Chyba registrace SW:', err));
             });
         }
 
         window.addEventListener('DOMContentLoaded', () => {
             initTheme();
             loadProfileData();
+            initTeacherModeToggle();
+            
             if (!localStorage.getItem('sbor_has_launched')) {
                 openWelcomeModal();
             }
@@ -694,6 +829,28 @@
             document.getElementById('profile-info-text').innerHTML = `Jméno: <b>${name}</b><br>Hlas: <b>${voice}</b>`;
         }
 
+        // Otevření detailu aktuality v modálním okně
+        function openNewsModal(title, text) {
+            document.getElementById('modal-news-title').innerText = title;
+            document.getElementById('modal-news-text').innerText = text;
+            document.getElementById('news-modal').classList.add('active');
+        }
+
+        function closeNewsModal() {
+            document.getElementById('news-modal').classList.remove('active');
+        }
+
+        // Správa učitelského (vícehlasého) režimu
+        function toggleTeacherMode(checkbox) {
+            localStorage.setItem('sbor_teacher_mode', checkbox.checked ? 'true' : 'false');
+        }
+
+        function initTeacherModeToggle() {
+            const isTeacher = localStorage.getItem('sbor_teacher_mode') === 'true';
+            const toggle = document.getElementById('teacher-mode-toggle');
+            if (toggle) toggle.checked = isTeacher;
+        }
+
         // Vytvoření HTML pro tematický přehrávač s posuvníkem
         function createPlayerHTML(title, src) {
             const playerId = 'player_' + Math.random().toString(36).substring(2, 9);
@@ -716,30 +873,45 @@
             `;
         }
 
-        // Otevření detailu písničky
+        // Otevření detailu písničky (podle toho, zda je zapnutý učitelský režim)
         function openSongModal(title, voices, accompaniments, pdfUrl) {
             stopAudio();
             document.getElementById('modal-song-title').innerText = title;
             document.getElementById('modal-download-btn').href = pdfUrl;
+            document.getElementById('modal-open-btn').href = pdfUrl;
 
             document.querySelectorAll('.modal-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.modal-nav-item').forEach(btn => btn.classList.remove('active'));
             document.getElementById('modal-sec-audio').classList.add('active');
             document.querySelector('.modal-nav-item').classList.add('active');
 
-            const userVoice = localStorage.getItem('sbor_user_voice') || 'Soprán';
-            document.getElementById('modal-user-voice-label').innerText = `Přehrát tvůj part: ${userVoice}`;
-
+            const isTeacherMode = localStorage.getItem('sbor_teacher_mode') === 'true';
             const voiceContainer = document.getElementById('modal-voice-container');
             voiceContainer.innerHTML = '';
-            
-            const voiceSrc = voices[userVoice];
-            if (voiceSrc) {
-                voiceContainer.innerHTML += createPlayerHTML(`${userVoice} (Tvůj part)`, voiceSrc);
+
+            if (isTeacherMode) {
+                // Učitelský režim: Zobrazí všechny hlasy najednou
+                document.getElementById('modal-user-voice-label').innerText = 'Vícehlasý režim (Učitel)';
+                document.getElementById('audio-section-header').innerText = 'Všechny hlasy';
+
+                for (let [voiceName, src] of Object.entries(voices)) {
+                    voiceContainer.innerHTML += createPlayerHTML(voiceName, src);
+                }
             } else {
-                voiceContainer.innerHTML += `<p style="font-size:0.9rem; color:var(--text-muted);">Hlas pro ${userVoice} není k dispozici.</p>`;
+                // Normální režim: Zobrazí pouze hlas daného uživatele
+                const userVoice = localStorage.getItem('sbor_user_voice') || 'Soprán';
+                document.getElementById('modal-user-voice-label').innerText = `Přehrát tvůj part: ${userVoice}`;
+                document.getElementById('audio-section-header').innerText = 'Tvůj hlas';
+
+                const voiceSrc = voices[userVoice];
+                if (voiceSrc) {
+                    voiceContainer.innerHTML += createPlayerHTML(`${userVoice} (Tvůj part)`, voiceSrc);
+                } else {
+                    voiceContainer.innerHTML += `<p style="font-size:0.9rem; color:var(--text-muted);">Hlas pro ${userVoice} není k dispozici.</p>`;
+                }
             }
 
+            // Doprovody (pokud existují)
             const accWrapper = document.getElementById('modal-accompaniment-wrapper');
             const accContainer = document.getElementById('modal-accompaniment-container');
             if (accompaniments) {
