@@ -5,14 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dětský Sbor Žďáráček</title>
     
-    <!-- Propojení s Manifestem pro instalaci na plochu -->
     <link rel="manifest" href="manifest.json">
-
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#6b1d2f">
 
-    <!-- Firebase SDK (Version 9 Compatibility Mode pro snadný JS) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -147,12 +144,18 @@
             background: rgba(255, 117, 151, 0.15);
         }
 
-        .btn-delete-news {
+        .card-actions-absolute {
             position: absolute;
             top: 15px;
             right: 15px;
-            background: rgba(255, 59, 48, 0.15);
-            color: #ff3b30;
+            display: flex;
+            gap: 6px;
+            z-index: 5;
+        }
+
+        .btn-news-action {
+            background: rgba(107, 29, 47, 0.15);
+            color: var(--primary);
             border: none;
             width: 32px;
             height: 32px;
@@ -161,8 +164,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 5;
         }
+
+        .btn-news-delete {
+            background: rgba(255, 59, 48, 0.15);
+            color: #ff3b30;
+        }
+
+        body.dark-mode .btn-news-action { color: #ff7597; }
 
         .song-card {
             display: flex;
@@ -214,7 +223,7 @@
             -webkit-backdrop-filter: blur(25px) saturate(180%);
             border: 1px solid var(--tab-border);
             display: flex;
-            gap: 8px;
+            gap: 6px;
             padding: 8px;
             border-radius: 36px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
@@ -228,7 +237,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 8px 22px;
+            padding: 8px 14px;
             border-radius: 30px;
             cursor: pointer;
             color: var(--text-muted);
@@ -237,8 +246,8 @@
             position: relative;
         }
 
-        .nav-item svg { width: 24px; height: 24px; }
-        .nav-item span { font-size: 0.68rem; font-weight: 600; }
+        .nav-item svg { width: 22px; height: 22px; }
+        .nav-item span { font-size: 0.62rem; font-weight: 600; }
 
         .nav-item.active {
             background: var(--primary);
@@ -250,7 +259,7 @@
         .update-dot {
             position: absolute;
             top: 6px;
-            right: 18px;
+            right: 12px;
             width: 10px;
             height: 10px;
             background-color: #ff3b30;
@@ -323,24 +332,31 @@
 
         .editor-toolbar {
             display: flex;
-            gap: 8px;
+            flex-wrap: wrap;
+            gap: 6px;
             margin-bottom: 8px;
+            background: var(--input-bg);
+            padding: 8px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
         }
 
         .tool-btn {
-            background: var(--input-bg);
+            background: var(--card-bg);
             border: 1px solid var(--card-border);
-            padding: 6px 12px;
-            border-radius: 12px;
+            padding: 6px 10px;
+            border-radius: 10px;
             font-weight: 700;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             cursor: pointer;
             color: var(--primary);
         }
 
+        body.dark-mode .tool-btn { color: #ff7597; }
+
         .editor-textarea {
             width: 100%;
-            height: 120px;
+            height: 140px;
             padding: 14px 16px;
             border-radius: 16px;
             border: 1px solid var(--card-border);
@@ -350,6 +366,11 @@
             margin-bottom: 18px;
             outline: none;
             resize: none;
+            white-space: pre-line;
+        }
+
+        #modal-news-text {
+            white-space: pre-line;
         }
 
         .player-box {
@@ -617,17 +638,26 @@
         <div id="tab-aktuality" class="tab-content active">
             <div class="aktuality-header">
                 <h2 style="font-size: 1.2rem; font-weight: 800;">Aktuality sboru</h2>
-                <button id="btn-add-news-trigger" class="btn-add-news" style="display:none;" onclick="openEditorModal()">
-                    ✏️ Přidat aktualitu
+                <button id="btn-add-news-trigger" class="btn-add-news" style="display:none;" onclick="openEditorModalForNew()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    Přidat aktualitu
                 </button>
             </div>
 
             <div class="grid" id="news-grid-container">
-                <!-- Zde se načítají novinky z databáze Firestore -->
+                <!-- Zde se načítají novinky -->
             </div>
         </div>
 
-        <!-- ZÁLOŽKA 2: AUDIO -->
+        <!-- ZÁLOŽKA 2: KALENDÁŘ -->
+        <div id="tab-kalendar" class="tab-content">
+            <h2 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 15px;">Kalendář akcí</h2>
+            <div class="grid" id="calendar-grid-container">
+                <!-- Zde se dynamicky generují akce z aktualit s datem -->
+            </div>
+        </div>
+
+        <!-- ZÁLOŽKA 3: AUDIO -->
         <div id="tab-audio" class="tab-content">
             <div class="grid">
                 <div class="card glass song-card" onclick="openSongModal('God Rest Ye Merry Gentlemen', { 'Soprán': 'audio/god-sopran.mp3', 'Alt': 'audio/god-alt.mp3', 'Tenor': 'audio/god-tenor.mp3', 'Bas': 'audio/god-bas.mp3' }, null, 'pdf/god-noty.pdf')">
@@ -647,7 +677,7 @@
             </div>
         </div>
 
-        <!-- ZÁLOŽKA 3: NASTAVENÍ -->
+        <!-- ZÁLOŽKA 4: NASTAVENÍ -->
         <div id="tab-nastaveni" class="tab-content">
             <div class="grid">
                 <div class="card glass">
@@ -655,21 +685,45 @@
                     <p id="profile-info-text">Načítám...</p>
                     <button class="voice-btn" style="width:100%; margin-top:12px;" onclick="openWelcomeModal()">Upravit profil</button>
                 </div>
+                
+                <!-- Nové přepínače v nastavení -->
+                <div class="card glass">
+                    <h3>Upozornění a Kalendář</h3>
+                    <div class="toggle-row" style="margin-bottom: 12px;">
+                        <span style="font-weight: 600; font-size: 0.9rem;">Upozornění nových aktualit</span>
+                        <label class="switch">
+                            <input type="checkbox" id="settings-notifications-toggle" onchange="toggleSetting('notifications', this)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <span style="font-weight: 600; font-size: 0.9rem;">Kalendář a události</span>
+                        <label class="switch">
+                            <input type="checkbox" id="settings-calendar-toggle" onchange="toggleSetting('calendar', this)" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="card glass">
                     <h3>Učitelský přístup</h3>
-                    <p style="margin-bottom: 8px;">Zadej heslo pro učitelské funkce (editace aktualit, vícehlasý režim):</p>
-                    <input type="password" id="input-teacher-password" class="form-input" placeholder="Zadej heslo..." style="margin-bottom: 10px;">
-                    <button class="voice-btn" style="width:100%; background: var(--primary); color: white;" onclick="verifyTeacherPassword()">Přihlásit učitele</button>
-                    <p id="teacher-auth-status" style="font-size: 0.8rem; margin-top: 8px; font-weight: 700;"></p>
+                    <div id="teacher-login-box">
+                        <p style="margin-bottom: 8px;">Zadej heslo pro učitelské funkce (editace aktualit, vícehlasý režim):</p>
+                        <input type="password" id="input-teacher-password" class="form-input" placeholder="Zadej heslo..." style="margin-bottom: 10px;">
+                        <button class="voice-btn" style="width:100%; background: var(--primary); color: white;" onclick="verifyTeacherPassword()">Přihlásit učitele</button>
+                        <p id="teacher-auth-status" style="font-size: 0.8rem; margin-top: 8px; font-weight: 700;"></p>
+                    </div>
 
                     <div id="teacher-options-wrapper" style="display:none; margin-top:15px; border-top: 1px dashed var(--card-border); padding-top: 15px;">
-                        <div class="toggle-row">
+                        <p style="font-size: 0.9rem; font-weight: 700; color: var(--primary); margin-bottom: 10px;">Jsi přihlášen jako učitel</p>
+                        <div class="toggle-row" style="margin-bottom: 12px;">
                             <span style="font-weight: 600; font-size: 0.9rem;">Vícehlasý režim</span>
                             <label class="switch">
                                 <input type="checkbox" id="teacher-mode-toggle" onchange="toggleTeacherMode(this)">
                                 <span class="slider"></span>
                             </label>
                         </div>
+                        <button class="voice-btn" style="width:100%; background: rgba(255, 59, 48, 0.15); color: #ff3b30; border-color: transparent;" onclick="logoutTeacher()">Odhlásit učitele</button>
                     </div>
                 </div>
                 <div class="card glass">
@@ -697,6 +751,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span>Aktuality</span>
             </button>
+            <button class="nav-item" id="nav-btn-calendar" onclick="switchTab('kalendar', event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>Kalendář</span>
+            </button>
             <button class="nav-item" onclick="switchTab('audio', event)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
                 <span>Audio</span>
@@ -713,10 +771,16 @@
     <div id="editor-modal" class="modal-overlay">
         <div class="modal-card" style="padding-bottom: 40px;">
             <button class="modal-close" onclick="closeEditorModal()">✕</button>
-            <h3 style="font-size: 1.2rem; margin-bottom: 15px; color: var(--primary);">Přidat novou aktualitu</h3>
+            <h3 id="editor-modal-title" style="font-size: 1.2rem; margin-bottom: 15px; color: var(--primary);">Přidat novou aktualitu</h3>
             
-            <label style="font-size: 0.75rem; font-weight: 700;">Štítek / Datum (např. VÍTEJ V APLIKACI / DNES)</label>
-            <input type="text" id="editor-tag" class="form-input" placeholder="Štítek..." value="DNES">
+            <input type="hidden" id="editor-editing-id" value="">
+
+            <label style="font-size: 0.75rem; font-weight: 700;">Štítek / Kategorie (např. KONCERT / ZPRÁVA)</label>
+            <input type="text" id="editor-tag" class="form-input" placeholder="Štítek..." value="AKTUALITA">
+
+            <!-- Nový řádek pro datum události do kalendáře -->
+            <label style="font-size: 0.75rem; font-weight: 700;">Datum akce pro kalendář (např. 15. 12. 2026)</label>
+            <input type="text" id="editor-date" class="form-input" placeholder="Zadej datum akce...">
 
             <label style="font-size: 0.75rem; font-weight: 700;">Hlavní nadpis</label>
             <input type="text" id="editor-title" class="form-input" placeholder="Nadpis...">
@@ -724,14 +788,31 @@
             <label style="font-size: 0.75rem; font-weight: 700;">Stručný popis na kartě</label>
             <input type="text" id="editor-short" class="form-input" placeholder="Stručný popis...">
 
-            <label style="font-size: 0.75rem; font-weight: 700;">Detailní popis (po rozkliknutí)</label>
+            <label style="font-size: 0.75rem; font-weight: 700;">Detailní popis (formátovací lišta jako ve Wordu)</label>
+            
             <div class="editor-toolbar">
-                <button class="tool-btn" onclick="insertFormat('bold')">B (Bordo Tučné)</button>
+                <button class="tool-btn" onclick="insertFormat('bold')"><b>B</b> Tučné</button>
+                <button class="tool-btn" onclick="insertFormat('underline')"><u>U</u> Podtržené</button>
                 <button class="tool-btn" onclick="insertFormat('bullet')">• Odrážka</button>
+                
+                <select id="tool-size" class="tool-btn" onchange="insertFormat('size', this.value)">
+                    <option value="">Velikost písma</option>
+                    <option value="small">Malé písmo</option>
+                    <option value="normal">Běžné písmo</option>
+                    <option value="large">Velké písmo</option>
+                </select>
+
+                <select id="tool-font" class="tool-btn" onchange="insertFormat('font', this.value)">
+                    <option value="">Styl písma</option>
+                    <option value="sans">Bez patky (Moderní)</option>
+                    <option value="serif">S patkou (Klasické)</option>
+                    <option value="monospace">Psací / Strojopis</option>
+                </select>
             </div>
+
             <textarea id="editor-full" class="editor-textarea" placeholder="Detailní text aktuality..."></textarea>
 
-            <button class="btn-submit" onclick="publishNews()">Publikovat všem</button>
+            <button class="btn-submit" onclick="publishNews()">Uložit a publikovat</button>
         </div>
     </div>
 
@@ -810,7 +891,7 @@
     </div>
 
     <script>
-        // === NASTAVENÍ FIREBASE (S TVÝMI KLÍČI) ===
+        // === NASTAVENÍ FIREBASE ===
         const firebaseConfig = {
             apiKey: "AIzaSyAnmWp8zCp8wLOgSAwN_mb_uLpFvASBiCQ",
             authDomain: "zdaracek-app.firebaseapp.com",
@@ -827,7 +908,6 @@
         let currentPlayingPlayer = null;
         let updateInterval = null;
 
-        // Registrace Service Workeru
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
@@ -848,6 +928,7 @@
             initTheme();
             loadProfileData();
             initTeacherState();
+            initSettingsToggles();
             listenToNews();
             
             if (!localStorage.getItem('sbor_has_launched')) {
@@ -855,46 +936,84 @@
             }
         });
 
-        // Živé načítání aktualit z Firebase Firestore
+        // Živé načítání aktualit a kalendáře z Firebase Firestore
         function listenToNews() {
             db.collection("news").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-                const container = document.getElementById('news-grid-container');
-                container.innerHTML = '';
+                const newsContainer = document.getElementById('news-grid-container');
+                const calendarContainer = document.getElementById('calendar-grid-container');
+                
+                newsContainer.innerHTML = '';
+                calendarContainer.innerHTML = '';
 
                 if (snapshot.empty) {
-                    container.innerHTML = '<div class="card glass"><p>Zatím zde nejsou žádné aktuality.</p></div>';
+                    newsContainer.innerHTML = '<div class="card glass"><p>Zatím zde nejsou žádné aktuality.</p></div>';
+                    calendarContainer.innerHTML = '<div class="card glass"><p>V kalendáři nejsou naplánované žádné akce.</p></div>';
                     return;
                 }
 
                 const isTeacher = localStorage.getItem('sbor_is_teacher') === 'true';
+                let calendarCount = 0;
 
                 snapshot.forEach(doc => {
                     const item = doc.data();
                     const newsId = doc.id;
 
+                    // 1. Vykreslení aktuality
                     const card = document.createElement('div');
                     card.className = 'card glass clickable';
                     
-                    let deleteBtnHTML = isTeacher ? `<button class="btn-delete-news" onclick="deleteNews('${newsId}', event)">🗑️</button>` : '';
+                    let actionsHTML = '';
+                    if (isTeacher) {
+                        actionsHTML = `
+                            <div class="card-actions-absolute">
+                                <button class="btn-news-action" onclick="openEditorModalForEdit('${newsId}', '${encodeURIComponent(item.tag || '')}', '${encodeURIComponent(item.eventDate || '')}', '${encodeURIComponent(item.title || '')}', '${encodeURIComponent(item.shortDesc || '')}', '${encodeURIComponent(item.fullDesc || '')}', event)" title="Upravit">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                                </button>
+                                <button class="btn-news-action btn-news-delete" onclick="deleteNews('${newsId}', event)" title="Smazat">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                </button>
+                            </div>
+                        `;
+                    }
 
                     card.innerHTML = `
-                        ${deleteBtnHTML}
-                        <span class="date">${item.tag || 'AKTUALITA'}</span>
+                        ${actionsHTML}
+                        <span class="date">${item.tag || 'AKTUALITA'} ${item.eventDate ? '• ' + item.eventDate : ''}</span>
                         <h3>${item.title}</h3>
                         <p>${item.shortDesc}</p>
                     `;
 
                     card.onclick = (e) => {
-                        if (e.target.classList.contains('btn-delete-news')) return;
+                        if (e.target.closest('.card-actions-absolute')) return;
                         openNewsModal(item.title, item.fullDesc);
                     };
 
-                    container.appendChild(card);
+                    newsContainer.appendChild(card);
+
+                    // 2. Vykreslení do kalendáře, pokud má zadané datum
+                    if (item.eventDate) {
+                        calendarCount++;
+                        const calCard = document.createElement('div');
+                        calCard.className = 'card glass clickable';
+                        calCard.innerHTML = `
+                            <span class="date">📅 ${item.eventDate}</span>
+                            <h3>${item.title}</h3>
+                            <p>${item.shortDesc}</p>
+                        `;
+                        calCard.onclick = () => {
+                            openNewsModal(item.title, item.fullDesc);
+                        };
+                        calendarContainer.appendChild(calCard);
+                    }
                 });
+
+                if (calendarCount === 0) {
+                    calendarContainer.innerHTML = '<div class="card glass"><p>Žádné akce s termínem v kalendáři.</p></div>';
+                }
             });
         }
 
-        // Přihlašovací heslo "html"
+        // Přihlášení a odhlášení učitele
         function verifyTeacherPassword() {
             const pwd = document.getElementById('input-teacher-password').value.trim();
             const status = document.getElementById('teacher-auth-status');
@@ -911,62 +1030,144 @@
             }
         }
 
+        function logoutTeacher() {
+            localStorage.setItem('sbor_is_teacher', 'false');
+            document.getElementById('input-teacher-password').value = '';
+            document.getElementById('teacher-auth-status').innerText = '';
+            initTeacherState();
+            listenToNews();
+        }
+
         function initTeacherState() {
             const isTeacher = localStorage.getItem('sbor_is_teacher') === 'true';
             document.getElementById('btn-add-news-trigger').style.display = isTeacher ? 'flex' : 'none';
             document.getElementById('teacher-options-wrapper').style.display = isTeacher ? 'block' : 'none';
+            document.getElementById('teacher-login-box').style.display = isTeacher ? 'none' : 'block';
             
             const isTeacherMode = localStorage.getItem('sbor_teacher_mode') === 'true';
             const toggle = document.getElementById('teacher-mode-toggle');
             if (toggle) toggle.checked = isTeacherMode;
         }
 
-        function openEditorModal() {
+        // Nastavení přepínačů
+        function initSettingsToggles() {
+            const notifSetting = localStorage.getItem('sbor_notif_enabled') !== 'false';
+            const calSetting = localStorage.getItem('sbor_cal_enabled') !== 'false';
+
+            document.getElementById('settings-notifications-toggle').checked = notifSetting;
+            document.getElementById('settings-calendar-toggle').checked = calSetting;
+
+            updateCalendarVisibility(calSetting);
+        }
+
+        function toggleSetting(type, checkbox) {
+            if (type === 'notifications') {
+                localStorage.setItem('sbor_notif_enabled', checkbox.checked ? 'true' : 'false');
+            } else if (type === 'calendar') {
+                localStorage.setItem('sbor_cal_enabled', checkbox.checked ? 'true' : 'false');
+                updateCalendarVisibility(checkbox.checked);
+            }
+        }
+
+        function updateCalendarVisibility(show) {
+            const calNavBtn = document.getElementById('nav-btn-calendar');
+            if (calNavBtn) {
+                calNavBtn.style.display = show ? 'flex' : 'none';
+            }
+        }
+
+        // Editor modál pro přidání / úpravu
+        function openEditorModalForNew() {
+            document.getElementById('editor-modal-title').innerText = 'Přidat novou aktualitu';
+            document.getElementById('editor-editing-id').value = '';
+            document.getElementById('editor-tag').value = 'AKTUALITA';
+            document.getElementById('editor-date').value = '';
+            document.getElementById('editor-title').value = '';
+            document.getElementById('editor-short').value = '';
+            document.getElementById('editor-full').value = '';
             document.getElementById('editor-modal').classList.add('active');
         }
+
+        function openEditorModalForEdit(id, tag, eventDate, title, shortDesc, fullDesc, event) {
+            event.stopPropagation();
+            document.getElementById('editor-modal-title').innerText = 'Upravit aktualitu';
+            document.getElementById('editor-editing-id').value = id;
+            document.getElementById('editor-tag').value = decodeURIComponent(tag);
+            document.getElementById('editor-date').value = decodeURIComponent(eventDate);
+            document.getElementById('editor-title').value = decodeURIComponent(title);
+            document.getElementById('editor-short').value = decodeURIComponent(shortDesc);
+            document.getElementById('editor-full').value = decodeURIComponent(fullDesc);
+            document.getElementById('editor-modal').classList.add('active');
+        }
+
         function closeEditorModal() {
             document.getElementById('editor-modal').classList.remove('active');
         }
 
-        function insertFormat(type) {
+        // Pokročilé formátování textu (styl Wordu)
+        function insertFormat(type, value = '') {
             const textarea = document.getElementById('editor-full');
             const start = textarea.selectionStart;
             const end = textarea.selectionEnd;
             const text = textarea.value;
+            const selectedText = text.substring(start, end) || 'text';
 
+            let replacement = '';
             if (type === 'bold') {
-                const selectedText = text.substring(start, end) || 'text';
-                const replacement = `<b style="color:var(--primary);">${selectedText}</b>`;
-                textarea.value = text.substring(0, start) + replacement + text.substring(end);
+                replacement = `<b style="color:var(--primary);">${selectedText}</b>`;
+            } else if (type === 'underline') {
+                replacement = `<u>${selectedText}</u>`;
             } else if (type === 'bullet') {
-                const replacement = `\n• `;
-                textarea.value = text.substring(0, start) + replacement + text.substring(end);
+                replacement = `\n• `;
+            } else if (type === 'size') {
+                if (!value) return;
+                let fontSize = '0.95rem';
+                if (value === 'small') fontSize = '0.75rem';
+                if (value === 'large') fontSize = '1.25rem';
+                replacement = `<span style="font-size: ${fontSize};">${selectedText}</span>`;
+                document.getElementById('tool-size').value = '';
+            } else if (type === 'font') {
+                if (!value) return;
+                let fontFamily = 'sans-serif';
+                if (value === 'serif') fontFamily = 'Georgia, serif';
+                if (value === 'monospace') fontFamily = 'Courier New, monospace';
+                replacement = `<span style="font-family: ${fontFamily};">${selectedText}</span>`;
+                document.getElementById('tool-font').value = '';
             }
+
+            textarea.value = text.substring(0, start) + replacement + text.substring(end);
+            textarea.focus();
         }
 
         function publishNews() {
+            const editingId = document.getElementById('editor-editing-id').value;
             const tag = document.getElementById('editor-tag').value.trim();
+            const eventDate = document.getElementById('editor-date').value.trim();
             const title = document.getElementById('editor-title').value.trim();
             const shortDesc = document.getElementById('editor-short').value.trim();
             const fullDesc = document.getElementById('editor-full').value.trim();
 
             if (!title || !shortDesc || !fullDesc) {
-                alert('Vyplň prosím všechna pole!');
+                alert('Vyplň prosím povinná pole!');
                 return;
             }
 
-            db.collection("news").add({
-                tag: tag.toUpperCase() || 'DNES',
+            const newsData = {
+                tag: tag.toUpperCase() || 'AKTUALITA',
+                eventDate: eventDate,
                 title: title,
                 shortDesc: shortDesc,
                 fullDesc: fullDesc,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            }).then(() => {
+            };
+
+            const promise = editingId 
+                ? db.collection("news").doc(editingId).update(newsData)
+                : db.collection("news").add(newsData);
+
+            promise.then(() => {
                 closeEditorModal();
-                document.getElementById('editor-title').value = '';
-                document.getElementById('editor-short').value = '';
-                document.getElementById('editor-full').value = '';
-            }).catch(err => alert('Chyba publikace: ' + err));
+            }).catch(err => alert('Chyba uložení: ' + err));
         }
 
         function deleteNews(newsId, event) {
