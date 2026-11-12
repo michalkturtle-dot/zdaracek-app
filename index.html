@@ -60,14 +60,14 @@
             padding-top: 15px;
             min-height: 100vh;
             overflow-x: hidden;
-            transition: background 0.5s ease, color 0.3s ease;
+            transition: background 0.6s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s ease;
             -webkit-font-smoothing: antialiased;
         }
 
         .glass {
             background: var(--card-bg);
-            backdrop-filter: blur(20px) saturate(180%);
-            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            backdrop-filter: blur(25px) saturate(180%);
+            -webkit-backdrop-filter: blur(25px) saturate(180%);
             border: 1px solid var(--card-border);
             box-shadow: var(--shadow-glass);
         }
@@ -81,14 +81,20 @@
         .tab-content {
             display: none;
             opacity: 0;
-            transform: translateY(15px);
-            transition: opacity 0.4s ease, transform 0.4s ease;
+            transform: translateY(20px) scale(0.98);
+            transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .tab-content.active {
             display: block;
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
+            animation: fadeInTab 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes fadeInTab {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .grid {
@@ -100,9 +106,14 @@
         .card {
             border-radius: 24px;
             padding: 20px;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            animation: fadeInUp 0.5s ease both;
+            transition: transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.35s ease;
+            animation: fadeInUpCard 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
             position: relative;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 16px 35px rgba(107, 29, 47, 0.12);
         }
 
         .card.clickable {
@@ -110,7 +121,12 @@
         }
 
         .card.clickable:active {
-            transform: scale(0.97);
+            transform: scale(0.96);
+        }
+
+        @keyframes fadeInUpCard {
+            from { opacity: 0; transform: translateY(25px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .card h3 {
@@ -118,6 +134,7 @@
             color: var(--primary);
             margin-bottom: 8px;
             font-weight: 700;
+            transition: color 0.3s ease;
         }
 
         body.dark-mode .card h3 { color: #ff7597; }
@@ -137,6 +154,7 @@
             display: inline-block;
             margin-bottom: 10px;
             font-weight: 700;
+            transition: background 0.3s ease;
         }
 
         body.dark-mode .card .date {
@@ -164,11 +182,21 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .btn-news-action:hover {
+            transform: scale(1.1);
+            background: rgba(107, 29, 47, 0.25);
         }
 
         .btn-news-delete {
             background: rgba(255, 59, 48, 0.15);
             color: #ff3b30;
+        }
+
+        .btn-news-delete:hover {
+            background: rgba(255, 59, 48, 0.25);
         }
 
         body.dark-mode .btn-news-action { color: #ff7597; }
@@ -194,7 +222,7 @@
             background: var(--primary);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 10px 18px;
             border-radius: 20px;
             font-weight: 700;
             font-size: 0.85rem;
@@ -202,7 +230,108 @@
             align-items: center;
             gap: 6px;
             cursor: pointer;
-            box-shadow: 0 4px 12px var(--primary-glow);
+            box-shadow: 0 6px 18px var(--primary-glow);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+        }
+
+        .btn-add-news:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 10px 25px var(--primary-glow);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .calendar-nav-btn {
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-main);
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .calendar-nav-btn:hover {
+            transform: scale(1.1);
+            background: var(--primary);
+            color: white;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            text-align: center;
+            animation: fadeInGrid 0.4s ease;
+        }
+
+        @keyframes fadeInGrid {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .calendar-weekday {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            padding-bottom: 8px;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            position: relative;
+            background: rgba(255, 255, 255, 0.4);
+            border: 1px solid var(--card-border);
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        body.dark-mode .calendar-day {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .calendar-day:hover {
+            transform: scale(1.08);
+            border-color: var(--primary);
+        }
+
+        .calendar-day.other-month {
+            opacity: 0.35;
+        }
+
+        .calendar-day.has-event {
+            background: var(--primary) !important;
+            color: white !important;
+            box-shadow: 0 6px 18px var(--primary-glow);
+            border-color: var(--primary);
+            animation: pulseEvent 2s infinite;
+        }
+
+        @keyframes pulseEvent {
+            0% { box-shadow: 0 0 0 0 rgba(107, 29, 47, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(107, 29, 47, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(107, 29, 47, 0); }
+        }
+
+        .calendar-events-list {
+            margin-top: 20px;
         }
 
         .nav-dock-wrapper {
@@ -226,7 +355,7 @@
             gap: 6px;
             padding: 8px;
             border-radius: 36px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
             position: relative;
         }
 
@@ -242,18 +371,22 @@
             cursor: pointer;
             color: var(--text-muted);
             gap: 3px;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
         }
 
-        .nav-item svg { width: 22px; height: 22px; }
+        .nav-item svg { width: 22px; height: 22px; transition: transform 0.3s ease; }
         .nav-item span { font-size: 0.62rem; font-weight: 600; }
+
+        .nav-item:hover svg {
+            transform: translateY(-2px);
+        }
 
         .nav-item.active {
             background: var(--primary);
             color: white;
             box-shadow: 0 6px 20px var(--primary-glow);
-            transform: translateY(-3px);
+            transform: translateY(-4px);
         }
 
         .update-dot {
@@ -266,6 +399,13 @@
             border-radius: 50%;
             border: 2px solid #fff;
             display: none;
+            animation: pulseDot 1.5s infinite;
+        }
+
+        @keyframes pulseDot {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
         }
 
         .modal-overlay {
@@ -274,17 +414,26 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.45);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             z-index: 2000;
             display: none;
             align-items: flex-end;
             justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
         .modal-overlay.active {
             display: flex;
+            opacity: 1;
+            animation: fadeInOverlay 0.3s ease forwards;
+        }
+
+        @keyframes fadeInOverlay {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .modal-card {
@@ -297,11 +446,16 @@
             border-top-right-radius: 36px;
             border: 1px solid var(--card-border);
             padding: 30px 24px 110px;
-            box-shadow: 0 -15px 40px rgba(0,0,0,0.3);
-            animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 -20px 50px rgba(0,0,0,0.35);
+            animation: slideUpModal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             position: relative;
             max-height: 85vh;
             overflow-y: auto;
+        }
+
+        @keyframes slideUpModal {
+            from { transform: translateY(100%); opacity: 0.5; }
+            to { transform: translateY(0); opacity: 1; }
         }
 
         .modal-close {
@@ -310,8 +464,8 @@
             right: 20px;
             background: rgba(150, 150, 150, 0.2);
             border: none;
-            width: 32px;
-            height: 32px;
+            width: 34px;
+            height: 34px;
             border-radius: 50%;
             font-size: 1rem;
             color: var(--text-main);
@@ -319,6 +473,12 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            transition: transform 0.2s ease, background 0.2s ease;
+        }
+
+        .modal-close:hover {
+            transform: scale(1.1);
+            background: rgba(150, 150, 150, 0.35);
         }
 
         .section-title {
@@ -350,6 +510,11 @@
             font-size: 0.8rem;
             cursor: pointer;
             color: var(--primary);
+            transition: transform 0.2s ease;
+        }
+
+        .tool-btn:hover {
+            transform: scale(1.05);
         }
 
         body.dark-mode .tool-btn { color: #ff7597; }
@@ -367,6 +532,12 @@
             outline: none;
             resize: none;
             white-space: pre-line;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .editor-textarea:focus, .form-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-glow);
         }
 
         #modal-news-text {
@@ -379,6 +550,11 @@
             border-radius: 20px;
             padding: 16px;
             margin-bottom: 10px;
+            transition: transform 0.3s ease;
+        }
+
+        .player-box:hover {
+            transform: translateY(-2px);
         }
 
         .player-controls {
@@ -401,6 +577,11 @@
             cursor: pointer;
             flex-shrink: 0;
             box-shadow: 0 4px 14px var(--primary-glow);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .btn-play-mini:hover {
+            transform: scale(1.1);
         }
 
         .player-info-text {
@@ -433,6 +614,11 @@
             background: var(--primary);
             cursor: pointer;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease;
+        }
+
+        .scrubber::-webkit-slider-thumb:hover {
+            transform: scale(1.25);
         }
 
         .time-labels {
@@ -459,7 +645,12 @@
             font-size: 0.95rem;
             text-decoration: none;
             box-shadow: 0 4px 14px var(--primary-glow);
-            transition: all 0.2s ease;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+        }
+
+        .download-btn:hover, .open-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 22px var(--primary-glow);
         }
 
         .open-btn {
@@ -532,6 +723,7 @@
             margin-top: 8px;
             margin-bottom: 14px;
             outline: none;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         .voice-grid {
@@ -550,7 +742,12 @@
             font-weight: 600;
             cursor: pointer;
             text-align: center;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .voice-btn:hover, .theme-btn:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
         }
 
         .voice-btn.selected, .theme-btn.active {
@@ -558,6 +755,7 @@
             color: white;
             border-color: var(--primary);
             box-shadow: 0 4px 14px var(--primary-glow);
+            transform: scale(1.02);
         }
 
         .btn-submit {
@@ -571,6 +769,12 @@
             font-size: 1rem;
             cursor: pointer;
             box-shadow: 0 8px 20px var(--primary-glow);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px var(--primary-glow);
         }
 
         .toggle-row {
@@ -598,7 +802,7 @@
             cursor: pointer;
             top: 0; left: 0; right: 0; bottom: 0;
             background-color: #ccc;
-            transition: .3s;
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 28px;
         }
 
@@ -608,26 +812,16 @@
             height: 20px; width: 20px;
             left: 4px; bottom: 4px;
             background-color: white;
-            transition: .3s;
+            transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 50%;
         }
 
         input:checked + .slider { background-color: var(--primary); }
         input:checked + .slider:before { transform: translateX(22px); }
 
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
         @keyframes bounceUp {
             from { opacity: 0; transform: translateY(50px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(100%); }
-            to { transform: translateY(0); }
         }
     </style>
 </head>
@@ -651,29 +845,40 @@
 
         <!-- ZÁLOŽKA 2: KALENDÁŘ -->
         <div id="tab-kalendar" class="tab-content">
-            <h2 style="font-size: 1.2rem; font-weight: 800; margin-bottom: 15px;">Kalendář akcí</h2>
-            <div class="grid" id="calendar-grid-container">
-                <!-- Zde se dynamicky generují akce z aktualit s datem -->
+            <div class="calendar-header">
+                <button class="calendar-nav-btn" onclick="changeMonth(-1)">‹</button>
+                <h2 id="calendar-month-title" style="font-size: 1.2rem; font-weight: 800;">Měsíc / Rok</h2>
+                <button class="calendar-nav-btn" onclick="changeMonth(1)">›</button>
+            </div>
+
+            <div class="card glass">
+                <div class="calendar-grid">
+                    <div class="calendar-weekday">PO</div>
+                    <div class="calendar-weekday">ÚT</div>
+                    <div class="calendar-weekday">ST</div>
+                    <div class="calendar-weekday">ČT</div>
+                    <div class="calendar-weekday">PÁ</div>
+                    <div class="calendar-weekday">SO</div>
+                    <div class="calendar-weekday">NE</div>
+                </div>
+                <div class="calendar-grid" id="calendar-days-grid" style="margin-top: 8px;">
+                    <!-- Dny se generují dynamicky -->
+                </div>
+            </div>
+
+            <div class="section-title">Události v tomto měsíci</div>
+            <div class="grid calendar-events-list" id="calendar-events-container">
+                <!-- Seznam událostí pro daný měsíc -->
             </div>
         </div>
 
-        <!-- ZÁLOŽKA 3: AUDIO -->
+        <!-- ZÁLOŽKA 3: AUDIO S VYHLEDÁVÁNÍM -->
         <div id="tab-audio" class="tab-content">
-            <div class="grid">
-                <div class="card glass song-card" onclick="openSongModal('God Rest Ye Merry Gentlemen', { 'Soprán': 'audio/god-sopran.mp3', 'Alt': 'audio/god-alt.mp3', 'Tenor': 'audio/god-tenor.mp3', 'Bas': 'audio/god-bas.mp3' }, null, 'pdf/god-noty.pdf')">
-                    <div class="song-info">
-                        <h3>God Rest Ye Merry Gentlemen</h3>
-                        <span>4 hlasy • Přehrát nahrávku</span>
-                    </div>
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--primary)"><path d="M8 5v14l11-7z"/></svg>
-                </div>
-                <div class="card glass song-card" onclick="openSongModal('Adeste fideles', { 'Soprán': 'audio/adeste-sopran.mp3', 'Alt': 'audio/adeste-alt.mp3', 'Tenor': 'audio/adeste-tenor.mp3', 'Bas': 'audio/adeste-bas.mp3' }, { 'Doprovod': 'audio/adeste-podklad.mp3' }, 'pdf/adeste-noty.pdf')">
-                    <div class="song-info">
-                        <h3>Adeste fideles</h3>
-                        <span>4 hlasy + doprovod • Přehrát nahrávku</span>
-                    </div>
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--primary)"><path d="M8 5v14l11-7z"/></svg>
-                </div>
+            <div style="margin-bottom: 15px;">
+                <input type="text" id="audio-search-input" class="form-input" placeholder="Hledat písničku..." oninput="filterSongs(this.value)">
+            </div>
+            <div class="grid" id="audio-grid-container">
+                <!-- Písničky se generují dynamicky -->
             </div>
         </div>
 
@@ -686,7 +891,6 @@
                     <button class="voice-btn" style="width:100%; margin-top:12px;" onclick="openWelcomeModal()">Upravit profil</button>
                 </div>
                 
-                <!-- Nové přepínače v nastavení -->
                 <div class="card glass">
                     <h3>Upozornění a Kalendář</h3>
                     <div class="toggle-row" style="margin-bottom: 12px;">
@@ -775,12 +979,11 @@
             
             <input type="hidden" id="editor-editing-id" value="">
 
-            <label style="font-size: 0.75rem; font-weight: 700;">Štítek / Kategorie (např. KONCERT / ZPRÁVA)</label>
+            <label style="font-size: 0.75rem; font-weight: 700;">Štítek / Kategorie</label>
             <input type="text" id="editor-tag" class="form-input" placeholder="Štítek..." value="AKTUALITA">
 
-            <!-- Nový řádek pro datum události do kalendáře -->
-            <label style="font-size: 0.75rem; font-weight: 700;">Datum akce pro kalendář (např. 15. 12. 2026)</label>
-            <input type="text" id="editor-date" class="form-input" placeholder="Zadej datum akce...">
+            <label style="font-size: 0.75rem; font-weight: 700;">Datum akce pro kalendář (Formát: DD.MM.YYYY, např. 15.12.2026)</label>
+            <input type="text" id="editor-date" class="form-input" placeholder="např. 15.12.2026">
 
             <label style="font-size: 0.75rem; font-weight: 700;">Hlavní nadpis</label>
             <input type="text" id="editor-title" class="form-input" placeholder="Nadpis...">
@@ -788,7 +991,7 @@
             <label style="font-size: 0.75rem; font-weight: 700;">Stručný popis na kartě</label>
             <input type="text" id="editor-short" class="form-input" placeholder="Stručný popis...">
 
-            <label style="font-size: 0.75rem; font-weight: 700;">Detailní popis (formátovací lišta jako ve Wordu)</label>
+            <label style="font-size: 0.75rem; font-weight: 700;">Detailní popis</label>
             
             <div class="editor-toolbar">
                 <button class="tool-btn" onclick="insertFormat('bold')"><b>B</b> Tučné</button>
@@ -804,9 +1007,9 @@
 
                 <select id="tool-font" class="tool-btn" onchange="insertFormat('font', this.value)">
                     <option value="">Styl písma</option>
-                    <option value="sans">Bez patky (Moderní)</option>
-                    <option value="serif">S patkou (Klasické)</option>
-                    <option value="monospace">Psací / Strojopis</option>
+                    <option value="sans">Bez patky</option>
+                    <option value="serif">S patkou</option>
+                    <option value="monospace">Strojopis</option>
                 </select>
             </div>
 
@@ -891,6 +1094,24 @@
     </div>
 
     <script>
+        // === SEZNAM PÍSNIČEK PRO VYHLEDÁVÁNÍ ===
+        const songsData = [
+            {
+                title: 'God Rest Ye Merry Gentlemen',
+                subtitle: '4 hlasy • Přehrát nahrávku',
+                voices: { 'Soprán': 'audio/god-sopran.mp3', 'Alt': 'audio/god-alt.mp3', 'Tenor': 'audio/god-tenor.mp3', 'Bas': 'audio/god-bas.mp3' },
+                accompaniments: null,
+                pdf: 'pdf/god-noty.pdf'
+            },
+            {
+                title: 'Adeste fideles',
+                subtitle: '4 hlasy + doprovod • Přehrát nahrávku',
+                voices: { 'Soprán': 'audio/adeste-sopran.mp3', 'Alt': 'audio/adeste-alt.mp3', 'Tenor': 'audio/adeste-tenor.mp3', 'Bas': 'audio/adeste-bas.mp3' },
+                accompaniments: { 'Doprovod': 'audio/adeste-podklad.mp3' },
+                pdf: 'pdf/adeste-noty.pdf'
+            }
+        ];
+
         // === NASTAVENÍ FIREBASE ===
         const firebaseConfig = {
             apiKey: "AIzaSyAnmWp8zCp8wLOgSAwN_mb_uLpFvASBiCQ",
@@ -907,6 +1128,9 @@
         let audioObject = new Audio();
         let currentPlayingPlayer = null;
         let updateInterval = null;
+
+        let currentCalendarDate = new Date();
+        let globalNewsList = [];
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -930,35 +1154,62 @@
             initTeacherState();
             initSettingsToggles();
             listenToNews();
+            renderSongs();
             
             if (!localStorage.getItem('sbor_has_launched')) {
                 openWelcomeModal();
             }
         });
 
-        // Živé načítání aktualit a kalendáře z Firebase Firestore
+        // Vykreslení a filtrování písniček
+        function renderSongs(filter = '') {
+            const container = document.getElementById('audio-grid-container');
+            container.innerHTML = '';
+            const filtered = songsData.filter(s => s.title.toLowerCase().includes(filter.toLowerCase()));
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="card glass"><p>Žádná písnička neodpovídá hledání.</p></div>';
+                return;
+            }
+
+            filtered.forEach(song => {
+                const card = document.createElement('div');
+                card.className = 'card glass song-card';
+                card.onclick = () => openSongModal(song.title, song.voices, song.accompaniments, song.pdf);
+                card.innerHTML = `
+                    <div class="song-info">
+                        <h3>${song.title}</h3>
+                        <span>${song.subtitle}</span>
+                    </div>
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="var(--primary)"><path d="M8 5v14l11-7z"/></svg>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function filterSongs(query) {
+            renderSongs(query);
+        }
+
         function listenToNews() {
             db.collection("news").orderBy("timestamp", "desc").onSnapshot(snapshot => {
                 const newsContainer = document.getElementById('news-grid-container');
-                const calendarContainer = document.getElementById('calendar-grid-container');
-                
                 newsContainer.innerHTML = '';
-                calendarContainer.innerHTML = '';
+                globalNewsList = [];
 
                 if (snapshot.empty) {
                     newsContainer.innerHTML = '<div class="card glass"><p>Zatím zde nejsou žádné aktuality.</p></div>';
-                    calendarContainer.innerHTML = '<div class="card glass"><p>V kalendáři nejsou naplánované žádné akce.</p></div>';
+                    renderCalendar();
                     return;
                 }
 
                 const isTeacher = localStorage.getItem('sbor_is_teacher') === 'true';
-                let calendarCount = 0;
 
                 snapshot.forEach(doc => {
                     const item = doc.data();
                     const newsId = doc.id;
+                    globalNewsList.push({ id: newsId, ...item });
 
-                    // 1. Vykreslení aktuality
                     const card = document.createElement('div');
                     card.className = 'card glass clickable';
                     
@@ -989,31 +1240,97 @@
                     };
 
                     newsContainer.appendChild(card);
-
-                    // 2. Vykreslení do kalendáře, pokud má zadané datum
-                    if (item.eventDate) {
-                        calendarCount++;
-                        const calCard = document.createElement('div');
-                        calCard.className = 'card glass clickable';
-                        calCard.innerHTML = `
-                            <span class="date">📅 ${item.eventDate}</span>
-                            <h3>${item.title}</h3>
-                            <p>${item.shortDesc}</p>
-                        `;
-                        calCard.onclick = () => {
-                            openNewsModal(item.title, item.fullDesc);
-                        };
-                        calendarContainer.appendChild(calCard);
-                    }
                 });
 
-                if (calendarCount === 0) {
-                    calendarContainer.innerHTML = '<div class="card glass"><p>Žádné akce s termínem v kalendáři.</p></div>';
-                }
+                renderCalendar();
             });
         }
 
-        // Přihlášení a odhlášení učitele
+        function renderCalendar() {
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+
+            const monthNames = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
+            document.getElementById('calendar-month-title').innerText = `${monthNames[month]} / ${year}`;
+
+            const grid = document.getElementById('calendar-days-grid');
+            const eventsContainer = document.getElementById('calendar-events-container');
+            grid.innerHTML = '';
+            eventsContainer.innerHTML = '';
+
+            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+            const totalDays = new Date(year, month + 1, 0).getDate();
+            const prevTotalDays = new Date(year, month, 0).getDate();
+
+            let monthlyEventsCount = 0;
+            let eventDatesMap = {};
+
+            globalNewsList.forEach(item => {
+                if (item.eventDate) {
+                    const parts = item.eventDate.trim().split('.');
+                    if (parts.length >= 3) {
+                        const d = parseInt(parts[0], 10);
+                        const m = parseInt(parts[1], 10) - 1;
+                        const y = parseInt(parts[2], 10);
+                        if (y === year && m === month) {
+                            eventDatesMap[d] = eventDatesMap[d] || [];
+                            eventDatesMap[d].push(item);
+                        }
+                    }
+                }
+            });
+
+            for (let i = firstDayIndex; i > 0; i--) {
+                const dayNum = prevTotalDays - i + 1;
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day other-month';
+                cell.innerText = dayNum;
+                grid.appendChild(cell);
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day';
+                cell.innerText = day;
+
+                if (eventDatesMap[day]) {
+                    cell.classList.add('has-event');
+                    cell.onclick = () => {
+                        const ev = eventDatesMap[day][0];
+                        openNewsModal(ev.title, ev.fullDesc);
+                    };
+                }
+
+                grid.appendChild(cell);
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                if (eventDatesMap[day]) {
+                    eventDatesMap[day].forEach(item => {
+                        monthlyEventsCount++;
+                        const card = document.createElement('div');
+                        card.className = 'card glass clickable';
+                        card.innerHTML = `
+                            <span class="date">${item.eventDate}</span>
+                            <h3>${item.title}</h3>
+                            <p>${item.shortDesc}</p>
+                        `;
+                        card.onclick = () => openNewsModal(item.title, item.fullDesc);
+                        eventsContainer.appendChild(card);
+                    });
+                }
+            }
+
+            if (monthlyEventsCount === 0) {
+                eventsContainer.innerHTML = '<div class="card glass"><p>V tomto měsíci nejsou naplánované žádné akce.</p></div>';
+            }
+        }
+
+        function changeMonth(direction) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+            renderCalendar();
+        }
+
         function verifyTeacherPassword() {
             const pwd = document.getElementById('input-teacher-password').value.trim();
             const status = document.getElementById('teacher-auth-status');
@@ -1021,12 +1338,12 @@
             if (pwd === 'html') {
                 localStorage.setItem('sbor_is_teacher', 'true');
                 status.style.color = '#34c759';
-                status.innerText = '✓ Přihlášen jako učitel!';
+                status.innerText = 'Přihlášen jako učitel';
                 initTeacherState();
                 listenToNews();
             } else {
                 status.style.color = '#ff3b30';
-                status.innerText = '✕ Špatné heslo!';
+                status.innerText = 'Špatné heslo';
             }
         }
 
@@ -1049,7 +1366,6 @@
             if (toggle) toggle.checked = isTeacherMode;
         }
 
-        // Nastavení přepínačů
         function initSettingsToggles() {
             const notifSetting = localStorage.getItem('sbor_notif_enabled') !== 'false';
             const calSetting = localStorage.getItem('sbor_cal_enabled') !== 'false';
@@ -1063,6 +1379,9 @@
         function toggleSetting(type, checkbox) {
             if (type === 'notifications') {
                 localStorage.setItem('sbor_notif_enabled', checkbox.checked ? 'true' : 'false');
+                if (checkbox.checked && 'Notification' in window) {
+                    Notification.requestPermission();
+                }
             } else if (type === 'calendar') {
                 localStorage.setItem('sbor_cal_enabled', checkbox.checked ? 'true' : 'false');
                 updateCalendarVisibility(checkbox.checked);
@@ -1076,7 +1395,6 @@
             }
         }
 
-        // Editor modál pro přidání / úpravu
         function openEditorModalForNew() {
             document.getElementById('editor-modal-title').innerText = 'Přidat novou aktualitu';
             document.getElementById('editor-editing-id').value = '';
@@ -1104,7 +1422,6 @@
             document.getElementById('editor-modal').classList.remove('active');
         }
 
-        // Pokročilé formátování textu (styl Wordu)
         function insertFormat(type, value = '') {
             const textarea = document.getElementById('editor-full');
             const start = textarea.selectionStart;
@@ -1414,7 +1731,7 @@
             }
             caches.keys().then(names => {
                 for (let name of names) {
-                    caches.delete(name);
+                    caches.keys().then(n => caches.delete(n));
                 }
             }).then(() => {
                 alert('Aplikace byla zkontrolována a aktualizována na nejnovější verzi!');
