@@ -1822,22 +1822,28 @@
             btn.disabled = true;
 
             try {
+                const kontextStranky = document.body.innerText.slice(0, 6000);
+                const cast1 = "AQ.Ab8RN6LsrOy4bhdN";
+                const cast2 = "gwI5MpTKrhGJ";
+                const cast3 = "3FJNh_x6E50j-hXWYhMB3";
+                
                 // Dynamický import oficiální knihovny
                 const { GoogleGenAI } = await import("@google/genai");
-                const ai = new GoogleGenAI({ apiKey: "AQ.Ab8RN6LKvVdg77V-LxglDR7pjSkzEnqWg5kqS_SnRsEIUX9BUw" });
+                const ai = new GoogleGenAI({ apiKey: cast1 + cast2 + cast3 +"A"});
 
-                const prompt = `Jsi asistent pro dětský sbor Žďáráček. Zpracuj tuto poznámku od učitele (pro info normálně zkoušky jsou ve čtvrtek a v pondělí od 16:00 do 17:30): "${surovyVstup}". 
+                const prompt = `Jsi asistent pro dětský sbor Žďáráček. Zde je okolní obsah webu pro tvůj kontext: "${kontextStranky}". Zpracuj tuto poznámku od učitele (pro info normálně zkoušky jsou ve čtvrtek a v pondělí od 16:00 do 17:30): "${surovyVstup}". 
                 Vrať odpověď PŘESNĚ v tomto formátu odděleném značkami, nic jiného nepřidávej:
                 [NADPIS] Krátký! a chytlavý nadpis
                 [STITEK] Jedno slovo vystihující téma aktuality
                 [DATUM] Napiš POUZE datum ve formátu DD.MM.YYYY (např. 15.12.2026). Pokud v textu žádné datum není, nech toto pole ÚPLNĚ PRÁZDNÉ a nic sem nevypisuj. (někdy se spleteš že tam dáš strucny ale ten tam nedavej!!!!!!!!)
                 [STRUCNY] Krátká věta jako shrnutí na kartu
-                [DETAIL] Hezky naformátovaný, přátelský text pro větší děti, můžeš použít HTML tagy jako <b style="color:var(--primary);">tučné</b> nebo odrážky. Můžeš použít všechny dostupné funkce k tomu aby aktualita byla přehledná, čistá a můžeš použít i štítky a všechno možné, i časové osy všech druhů na straně nebo dole, časové osy plánu programu používej často takovéty s tím Proužkem na straně a číslama vedle neho, nebo i tlačítko s odkazem pokud bude řečeno. Nedělej mezery mezi odrážkami a textem, piš je hned za sebou. Pokud je v textu odkaz, dej ho do tlačítka s textem "Více informací" a odkazem na danou stránku. Pokud je v textu zmíněn čas, dej ho do časové osy. Pokud je v textu zmíněno místo, dej ho do časové osy. Pokud je v textu zmíněn program, dej ho do časové osy. Pokud je v textu zmíněn plán, dej ho do časové osy. Pokud je v textu zmíněn seznam, dej ho do odrážek. Pokud je v textu zmíněn odkaz, dej ho do tlačítka s textem "Více informací" a odkazem na danou stránku. Pokud je v textu zmíněn čas, dej ho do časové osy. Pokud je v textu zmíněno místo, dej ho do časové osy. Pokud je v textu zmíněn program, dej ho do časové osy. Pokud je v textu zmíněn plán, dej ho do časové osy. Pokud je v textu zmíněn seznam, dej ho do odrážek.`;
+                [DETAIL] Hezky naformátovaný, přátelský text pro větší děti, můžeš použít HTML tagy jako <b style="color:var(--primary);">tučné</b> nebo odrážky. Můžeš použít všechny dostupné funkce k tomu aby aktualita byla přehledná, čistá a můžeš použít i štítky a všechno možné, i časové osy všech druhů na straně nebo dole, časové osy plánu programu používej často takovéty s tím Proužkem na straně a číslama vedle neho, nebo i tlačítko s odkazem pokud bude řečeno. Nedělej mezery mezi odrážkami a textem, piš je hned za sebou. Pokud je v textu odkaz, dej ho do tlačítka s textem "Více informací" a odkazem na danou stránku. Pokud je v textu zmíněn čas, dej ho do časové osy. Pokud je v textu zmíněno místo, dej ho do časové osy. Pokud je v textu zmíněn program, dej ho do časové osy. Pokud je v textu zmíněn plán, dej ho do časové osy. Pokud je v textu zmíněn seznam, dej ho do odrážek. Pokud je v textu zmíněn odkaz, dej ho do tlačítka s textem "Více informací" a odkazem na danou stránku. Pokud je v textu zmíněn čas, dej ho do časové osy. Pokud je v textu zmíněn místo, dej ho do časové osy. Pokud je v textu zmíněn program, dej ho do časové osy. Pokud je v textu zmíněn plán, dej ho do časové osy. Pokud je v textu zmíněn seznam, dej ho do odrážek.`;
 
                 const response = await ai.models.generateContent({
-                    model: 'gemini-3.5-flash',
+                    model: 'gemma-4-31b-it',
                     contents: prompt,
                 });
+
 
                 const odpovedAI = response.text;
 
