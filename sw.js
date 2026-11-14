@@ -4,7 +4,50 @@ const assetsToCache = [
   './manifest.json'
 ];
 
-// Instalace a uložení základních souborů
+// === 1. FIREBASE PRO PUSH NOTIFIKACE ===
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+    apiKey: "AIzaSyAnmWp8zCp8wLOgSAwN_mb_uLpFvASBiCQ",
+    authDomain: "zdaracek-app.firebaseapp.com",
+    projectId: "zdaracek-app",
+    storageBucket: "zdaracek-app.firebasestorage.app",
+    messagingSenderId: "369201752333",
+    appId: "1:369201752333:web:8b77821b485d9e2a59a844"
+});
+
+const messaging = firebase.messaging();
+
+// Zobrazení notifikace ve stavovém řádku, když je aplikace zavřená
+messaging.onBackgroundMessage((payload) => {
+    const title = payload.notification?.title || 'Nová aktualita Žďáráček';
+    const options = {
+        body: payload.notification?.body || 'Podívej se, co je ve sboru nového!',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        vibrate: [200, 100, 200],
+        data: { url: '/' }
+    };
+
+    self.registration.showNotification(title, options);
+});
+
+// Kliknutí na notifikaci otevře aplikaci
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            if (clientList.length > 0) {
+                return clientList[0].focus();
+            }
+            return clients.openWindow('/');
+        })
+    );
+});
+
+
+// === 2. INSTALACE A CACHOVÁNÍ (VÁŠ PŮVODNÍ KÓD) ===
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
