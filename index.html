@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dětský Sbor Žďáráček</title>
-    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -1225,6 +1228,9 @@
             <label style="font-size: 0.75rem; font-weight: 700;">Datum akce pro kalendář (Formát: DD.MM.YYYY)</label>
             <input type="text" id="editor-date" class="form-input" placeholder="např. 15.12.2026">
 
+            <label style="font-size: 0.75rem; font-weight: 700;">Odkaz na Google Mapy (volitelně)</label>
+            <input type="text" id="editor-map" class="form-input" placeholder="Vlož odkaz z Google Map...">
+
             <label style="font-size: 0.75rem; font-weight: 700;">Hlavní nadpis</label>
             <input type="text" id="editor-title" class="form-input" placeholder="Nadpis...">
 
@@ -1253,7 +1259,7 @@
                 </select>
             </div>
 
-            <textarea id="editor-full" class="editor-textarea" placeholder="Detailní text aktuality..."></textarea>
+            <textarea id="editor-full" class="editor-textarea" placeholder="Detailní text aktuality..." onpaste="handleEditorPaste(event)"></textarea>
 
             <button class="btn-submit" onclick="publishNews()">Uložit a publikovat</button>
         </div>
@@ -1893,6 +1899,7 @@
                         eventDate: d.eventDate || '',
                         title: d.title || '',
                         shortDesc: d.shortDesc || '',
+                        mapLink: d.mapLink || '', // <-- TOTO TADY CHYBĚLO!
                         fullDesc: d.fullDesc || '',
                         sortOrder: typeof d.sortOrder === 'number' ? d.sortOrder : null,
                         createdAtMs: d.timestamp && d.timestamp.toMillis ? d.timestamp.toMillis() : 0
@@ -1966,7 +1973,7 @@
 
                 card.onclick = (e) => {
                     if (e.target.closest('.card-actions-absolute')) return;
-                    openNewsModal(item.title, item.fullDesc);
+                    openNewsModal(item.title, item.fullDesc, item.mapLink);
                 };
 
                 newsContainer.appendChild(card);
@@ -2063,7 +2070,7 @@
                             <h3>${item.title}</h3>
                             <p>${item.shortDesc}</p>
                         `;
-                        card.onclick = () => openNewsModal(item.title, item.fullDesc);
+                        card.onclick = () => openNewsModal(item.title, item.fullDesc, item.mapLink);
                         eventsContainer.appendChild(card);
                     });
                 }
@@ -2152,6 +2159,7 @@
             document.getElementById('editor-editing-id').value = '';
             document.getElementById('editor-tag').value = 'AKTUALITA';
             document.getElementById('editor-date').value = '';
+            document.getElementById('editor-map').value = ''; // <-- TOTO TADY PŘIDEJ!
             document.getElementById('editor-title').value = '';
             document.getElementById('editor-short').value = '';
             document.getElementById('editor-full').value = '';
@@ -2169,6 +2177,7 @@
             document.getElementById('editor-short').value = decodeURIComponent(shortDesc);
             document.getElementById('editor-full').value = decodeURIComponent(fullDesc);
             document.getElementById('editor-modal').classList.add('active');
+            document.getElementById('editor-map').value = decodeURIComponent(mapLink || '');
         }
 
         function closeEditorModal() {
@@ -2216,6 +2225,9 @@
             const title = document.getElementById('editor-title').value.trim();
             const shortDesc = document.getElementById('editor-short').value.trim();
             const fullDesc = document.getElementById('editor-full').value.trim();
+            
+            // --> TADY PŘIDEJ TENTO ŘÁDEK:
+            const mapLink = document.getElementById('editor-map').value.trim();
 
             if (!title || !shortDesc || !fullDesc) {
                 alert('Vyplň prosím povinná pole!');
@@ -2228,6 +2240,7 @@
                 title: title,
                 shortDesc: shortDesc,
                 fullDesc: fullDesc,
+                mapLink: mapLink, // <-- A TADY PŘIDEJ MAPLINK DO BALÍČKU
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
@@ -2251,12 +2264,30 @@
             }
         }
 
-        function openNewsModal(title, textHTML) {
-            document.getElementById('modal-news-title').innerText = title;
-            document.getElementById('modal-news-text').innerHTML = textHTML;
-            document.getElementById('news-modal').classList.add('active');
+            function openNewsModal(title, textHTML, mapLink) {
+        // 1. Tady už máš někde připravený nadpis a text
+        document.getElementById('modal-news-title').innerText = title;
+        
+        // --- TADY VLOŽÍŠ TEN MŮJ KÓD PRO MAPU ---
+        let finalContent = textHTML;
+        if (mapLink) {
+            let embedSrc = mapLink;
+            if (!mapLink.includes('iframe') && mapLink.includes('google.com/maps')) {
+                embedSrc = `https://maps.google.com/maps?q=${encodeURIComponent(mapLink)}&output=embed`;
+            }
+            
+            if (mapLink.includes('<iframe')) {
+                finalContent += `<div style="margin-top:15px; border-radius:16px; overflow:hidden; border:1px solid var(--card-border);">${mapLink}</div>`;
+            } else {
+                finalContent += `<div style="margin-top:15px; border-radius:16px; overflow:hidden; border:1px solid var(--card-border); height:250px;"><iframe src="${embedSrc}" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe></div>`;
+            }
         }
+        // ---------------------------------------
 
+        // 2. A tady se to celé pošle do okna (zde použijeme 'finalContent' místo 'textHTML')
+        document.getElementById('modal-news-text').innerHTML = finalContent;
+        document.getElementById('news-modal').classList.add('active');
+    }
         function closeNewsModal() {
             document.getElementById('news-modal').classList.remove('active');
         }
@@ -2383,6 +2414,16 @@
 
             document.getElementById('song-modal').classList.add('active');
         }
+        function openSongByName(songName) {
+            const song = globalSongsList.find(s => s.title.toLowerCase().includes(songName.toLowerCase()));
+            if (song) {
+                closeNewsModal(); // Zavře okno aktuality
+                openSongModal(song); // Otevře okno písničky
+            } else {
+                alert('Písnička nebyla v seznamu nalezena.');
+            }
+        }
+
 
         function closeSongModal() {
             stopAudio();
@@ -2506,6 +2547,82 @@
                 alert('Aplikace byla zkontrolována a aktualizována na nejnovější verzi!');
                 window.location.reload(true);
             });
+        }
+        function toggleSetting(type, checkbox) {
+            if (type === 'notifications') {
+                localStorage.setItem('sbor_notif_enabled', checkbox.checked ? 'true' : 'false');
+                if (checkbox.checked) {
+                    registerPushNotifications(); // <-- Tady se spouští vyžádání tokenu
+                }
+            } else if (type === 'calendar') {
+                localStorage.setItem('sbor_cal_enabled', checkbox.checked ? 'true' : 'false');
+                updateCalendarVisibility(checkbox.checked);
+            }
+        }
+        const messaging = firebase.messaging();
+        const VAPID_KEY = "BMmDJrrFng4Ajjz6y0_gM03YfvgYc-dq87PXufyyMecMA5J-MjzVXE0T-Osnk-AToh5tEAdppByFdNScGSKvNcI "; // Sem vlož svůj klíč z Firebase konzole
+
+        async function registerPushNotifications() {
+            if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+            // Podmínka pro iOS (Apple) – aplikace musí být přidaná na plochu
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+            if (isIOS && !isStandalone) {
+                alert('Na iPhonu/iPadu přidej nejprve aplikaci na plochu (Sdílet -> Přidat na plochu), aby fungovaly notifikace!');
+                return;
+            }
+
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted') {
+                try {
+                    const registration = await navigator.serviceWorker.ready;
+                    const token = await messaging.getToken({
+                        vapidKey: VAPID_KEY,
+                        serviceWorkerRegistration: registration
+                    });
+
+                    if (token) {
+                        // Uložení tokenu do Firestore databáze
+                        await db.collection('fcm_tokens').doc(token).set({
+                            token: token,
+                            voice: localStorage.getItem('sbor_user_voice') || 'Neznámý',
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                } catch (err) {
+                    console.error('Chyba tokenu:', err);
+                }
+            } else {
+                const toggle = document.getElementById('settings-notifications-toggle');
+                if (toggle) toggle.checked = false;
+            }
+        }
+        function handleEditorPaste(event) {
+            const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file' && item.type.includes('image')) {
+                    event.preventDefault(); // Zastaví výchozí vložení
+                    const blob = item.getAsFile();
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(event) {
+                        const base64Img = event.target.result;
+                        const textarea = document.getElementById('editor-full');
+                        const cursorPos = textarea.selectionStart;
+                        const textBefore = textarea.value.substring(0, cursorPos);
+                        const textAfter = textarea.value.substring(cursorPos);
+                        
+                        // Vloží HTML značku pro obrázek přímo na pozici kurzoru
+                        const imageHTML = `<br><img src="${base64Img}" style="max-width:100%; border-radius:12px; margin:10px 0;"/><br>`;
+                        textarea.value = textBefore + imageHTML + textAfter;
+                    };
+                    
+                    reader.readAsDataURL(blob);
+                    break;
+                }
+            }
         }
     </script>
 </body>
