@@ -4,26 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Dětský Sbor Žďáráček</title>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="512x512" href="icons/icon-512.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Žďáráček">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#6b1d2f">
 
-    <!-- Firebase (Databáze pro aktuality, pořadí a metadata písní) -->
-     <!-- Google Gen AI SDK -->
+    <!-- Google Gen AI SDK -->
     <script type="importmap">
     {
         "imports": {
-        "@google/genai": "https://esm.run/@google/genai"
+            "@google/genai": "https://esm.run/@google/genai"
         }
     }
     </script>
+
+    <!-- Firebase (Databáze pro aktuality, pořadí, statistiky a notifikace) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
     
     <!-- Supabase (Cloudové úložiště pro MP3 a PDF soubory) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -39,8 +42,8 @@
             --card-border: rgba(255, 255, 255, 0.9);
             --text-main: #222225;
             --text-muted: #5a626a;
-            --tab-bg: rgba(255, 255, 255, 0.88);
-            --tab-border: rgba(255, 255, 255, 0.9);
+            --tab-bg: rgba(255, 255, 255, 0.92);
+            --tab-border: rgba(255, 255, 255, 0.95);
             --modal-bg: rgba(255, 255, 255, 0.97);
             --input-bg: rgba(255, 255, 255, 0.88);
             --shadow-glass: 0 10px 30px 0 rgba(107, 29, 47, 0.08);
@@ -56,7 +59,7 @@
             --card-border: rgba(255, 255, 255, 0.12);
             --text-main: #f5f5f7;
             --text-muted: #c2c2cc;
-            --tab-bg: rgba(24, 18, 22, 0.88);
+            --tab-bg: rgba(24, 18, 22, 0.92);
             --tab-border: rgba(255, 255, 255, 0.14);
             --modal-bg: rgba(28, 24, 30, 0.98);
             --input-bg: rgba(45, 38, 46, 0.85);
@@ -84,9 +87,9 @@
         }
 
         .glass {
-            background: var(--card-bg);
-            backdrop-filter: blur(25px) saturate(180%);
-            -webkit-backdrop-filter: blur(25px) saturate(180%);
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(12px) saturate(180%);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
             border: 1px solid var(--card-border);
             box-shadow: var(--shadow-glass);
         }
@@ -207,6 +210,7 @@
             align-items: center;
             justify-content: center;
             transition: transform 0.2s ease, background 0.2s ease;
+            flex-shrink: 0;
         }
 
         .btn-news-action:hover {
@@ -235,10 +239,17 @@
         /* Karta písničky a semafor znalosti */
         .song-card {
             display: flex;
+            flex-direction: column;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .song-card-main {
+            display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 12px;
-            cursor: pointer;
+            gap: 10px;
+            width: 100%;
         }
 
         .song-info {
@@ -294,6 +305,35 @@
         .mastery-dot.red { background-color: var(--status-red); }
         .mastery-dot.orange { background-color: var(--status-orange); }
         .mastery-dot.green { background-color: var(--status-green); }
+
+        /* Anonymní procentuální čára pro učitele */
+        .teacher-mastery-bar-wrap {
+            width: 100%;
+            padding-top: 8px;
+            border-top: 1px dashed var(--card-border);
+        }
+
+        .teacher-mastery-bar {
+            height: 8px;
+            width: 100%;
+            border-radius: 6px;
+            background: rgba(150, 150, 150, 0.2);
+            overflow: hidden;
+            display: flex;
+        }
+
+        .teacher-bar-seg.green { background: var(--status-green); }
+        .teacher-bar-seg.orange { background: var(--status-orange); }
+        .teacher-bar-seg.red { background: var(--status-red); }
+
+        .teacher-mastery-legend {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
 
         .mastery-selector-modal {
             display: grid;
@@ -514,18 +554,39 @@
             100% { box-shadow: 0 0 0 0 rgba(107, 29, 47, 0); }
         }
 
-        .calendar-events-list {
-            margin-top: 20px;
+        .countdown-pill-card {
+            margin-top: 12px;
+            padding: 12px 16px;
+            border-radius: 18px;
+            background: rgba(107, 29, 47, 0.1);
+            border: 1px solid var(--primary-glow);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--primary);
         }
 
+        body.dark-mode .countdown-pill-card {
+            background: rgba(255, 133, 166, 0.14);
+            color: #ffb3c6;
+        }
+
+        .calendar-events-list {
+            margin-top: 14px;
+        }
+
+        /* Nová spodní lišta přesně podle orientačního obrázku */
         .nav-dock-wrapper {
             position: fixed;
-            bottom: 25px;
+            bottom: 22px;
             left: 0;
             width: 100%;
             display: flex;
             justify-content: center;
-            padding: 0 20px;
+            padding: 0 12px;
             z-index: 1000;
             animation: bounceUp 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -536,11 +597,13 @@
             -webkit-backdrop-filter: blur(25px) saturate(180%);
             border: 1px solid var(--tab-border);
             display: flex;
-            gap: 6px;
-            padding: 8px;
-            border-radius: 36px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            align-items: center;
+            gap: 4px;
+            padding: 7px 10px;
+            border-radius: 40px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.14);
             position: relative;
+            max-width: 100%;
         }
 
         .nav-item {
@@ -550,17 +613,18 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 8px 14px;
-            border-radius: 30px;
+            padding: 9px 13px;
+            border-radius: 32px;
             cursor: pointer;
             color: var(--text-muted);
-            gap: 3px;
+            gap: 4px;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
+            min-width: 58px;
         }
 
         .nav-item svg { width: 22px; height: 22px; transition: transform 0.3s ease; }
-        .nav-item span { font-size: 0.62rem; font-weight: 600; }
+        .nav-item span { font-size: 0.65rem; font-weight: 700; white-space: nowrap; }
 
         .nav-item:hover svg {
             transform: translateY(-2px);
@@ -569,8 +633,8 @@
         .nav-item.active {
             background: var(--primary);
             color: white;
-            box-shadow: 0 6px 20px var(--primary-glow);
-            transform: translateY(-4px);
+            box-shadow: 0 8px 22px var(--primary-glow);
+            padding: 10px 18px;
         }
 
         .update-dot {
@@ -590,6 +654,136 @@
             0% { transform: scale(1); }
             50% { transform: scale(1.3); }
             100% { transform: scale(1); }
+        }
+
+        /* Klavír a metronom v kartě Cvičení */
+        .piano-wrapper {
+            display: flex;
+            position: relative;
+            height: 145px;
+            margin: 12px 0;
+            user-select: none;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .piano-key-white {
+            flex: 1;
+            min-width: 36px;
+            height: 135px;
+            background: #ffffff;
+            border: 1px solid #cfd4dc;
+            border-radius: 0 0 12px 12px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 10px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            color: #444;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+            transition: transform 0.08s ease, background 0.15s ease;
+            position: relative;
+        }
+
+        .piano-key-white:active, .piano-key-white.active-note {
+            background: #fce4ec;
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(2px);
+        }
+
+        .piano-black-row {
+            position: relative;
+            display: flex;
+            width: 100%;
+            min-width: 288px;
+            height: 135px;
+        }
+
+        .piano-key-black {
+            position: absolute;
+            width: 24px;
+            height: 82px;
+            background: linear-gradient(180deg, #333 0%, #111 100%);
+            border-radius: 0 0 8px 8px;
+            z-index: 3;
+            cursor: pointer;
+            color: #fff;
+            font-size: 0.6rem;
+            font-weight: 700;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 7px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+            transition: transform 0.08s ease, background 0.15s ease;
+        }
+
+        .piano-key-black:active, .piano-key-black.active-note {
+            background: var(--primary);
+            transform: translateY(2px);
+        }
+
+        .metro-beats-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin: 14px 0;
+        }
+
+        .metro-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(150, 150, 150, 0.25);
+            border: 2px solid var(--card-border);
+            transition: transform 0.1s ease, background 0.1s ease;
+        }
+
+        .metro-dot.accent {
+            width: 26px;
+            height: 26px;
+        }
+
+        .metro-dot.lit {
+            background: var(--primary);
+            transform: scale(1.25);
+            box-shadow: 0 0 14px var(--primary-glow);
+        }
+
+        .metro-dot.lit.accent {
+            background: #ff3b30;
+        }
+
+        .rhythm-chip-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .rhythm-chip {
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid var(--card-border);
+            background: var(--input-bg);
+            color: var(--text-main);
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .rhythm-chip.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
         }
 
         .modal-overlay {
@@ -615,6 +809,12 @@
             animation: fadeInOverlay 0.3s ease forwards;
         }
 
+        .modal-overlay.center-dialog {
+            align-items: center;
+            padding: 20px;
+            z-index: 4000;
+        }
+
         @keyframes fadeInOverlay {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -633,8 +833,15 @@
             box-shadow: 0 -20px 50px rgba(0,0,0,0.35);
             animation: slideUpModal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             position: relative;
-            max-height: 85vh;
+            max-height: 88vh;
             overflow-y: auto;
+        }
+
+        .center-dialog .modal-card {
+            border-radius: 28px;
+            max-width: 420px;
+            padding: 26px 22px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
         }
 
         @keyframes slideUpModal {
@@ -704,7 +911,9 @@
 
         .editor-textarea {
             width: 100%;
-            height: 120px;
+            height: auto;
+            min-height: 120px;
+            overflow-y: auto;
             padding: 14px 16px;
             border-radius: 16px;
             border: 1px solid var(--card-border);
@@ -743,6 +952,79 @@
         body.dark-mode #modal-news-text b,
         body.dark-mode #modal-news-text strong {
             color: #ff9ebb !important;
+        }
+
+        /* Rychlost přehrávání v přehrávači */
+        .speed-control-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            padding: 10px 14px;
+            border-radius: 16px;
+            margin-bottom: 14px;
+        }
+
+        .speed-toggle-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 0.82rem;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .speed-popover-panel {
+            background: var(--input-bg);
+            border: 1px solid var(--primary-glow);
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            display: none;
+        }
+
+        .speed-popover-panel.open {
+            display: block;
+        }
+
+        .speed-input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .speed-number-input {
+            width: 76px;
+            padding: 7px 10px;
+            border-radius: 10px;
+            border: 1px solid var(--card-border);
+            background: var(--card-bg);
+            color: var(--text-main);
+            font-weight: 800;
+            font-size: 0.88rem;
+            text-align: center;
+        }
+
+        .song-teacher-note-box {
+            background: rgba(107, 29, 47, 0.08);
+            border-left: 4px solid var(--primary);
+            padding: 12px 14px;
+            border-radius: 12px;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            margin-bottom: 16px;
+            color: var(--text-main);
+        }
+
+        body.dark-mode .song-teacher-note-box {
+            background: rgba(255, 133, 166, 0.12);
+            border-left-color: #ff85a6;
         }
 
         .player-box {
@@ -1026,6 +1308,23 @@
         input:checked + .slider { background-color: var(--primary); }
         input:checked + .slider:before { transform: translateX(22px); }
 
+        .song-link-btn-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--primary);
+            color: #ffffff !important;
+            border: none;
+            padding: 9px 15px;
+            border-radius: 14px;
+            font-weight: 700;
+            font-size: 0.86rem;
+            cursor: pointer;
+            margin: 6px 0;
+            text-decoration: none;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
         @keyframes bounceUp {
             from { opacity: 0; transform: translateY(50px); }
             to { opacity: 1; transform: translateY(0); }
@@ -1035,7 +1334,94 @@
 <body>
 
     <div class="container">
-        <!-- ZÁLOŽKA 1: AKTUALITY -->
+        <!-- ZÁLOŽKA 1: CVIČENÍ (LADIČKA, KLAVÍR, CHYTRÝ METRONOM A RYTMS) -->
+        <div id="tab-cviceni" class="tab-content">
+            <div class="aktuality-header">
+                <h2 style="font-size: 1.2rem; font-weight: 800;">Pěvecké cvičení</h2>
+            </div>
+
+            <div class="grid">
+                <!-- Ladička / Klavír / Zadání tónu -->
+                <div class="card glass">
+                    <h3 style="padding-right:0;">Ladička a klavír</h3>
+                    <p style="margin-bottom: 10px;">Klikni na klávesu nebo napiš tón (např. <b>C4</b>, <b>A4</b>, <b>F#4</b>, <b>Hb3</b>):</p>
+                    
+                    <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                        <input type="text" id="tuner-note-input" class="form-input" style="margin:0; flex:1;" placeholder="Zadej tón (např. A4, C5, Fis4)...">
+                        <button class="btn-add-news" type="button" onclick="playTypedNote()">Zahrát tón</button>
+                    </div>
+
+                    <div id="tuner-active-display" style="font-size: 0.82rem; font-weight: 700; color: var(--primary); margin-bottom: 6px;">Připraveno – vyber tón</div>
+
+                    <div class="piano-wrapper" id="piano-keyboard-container">
+                        <!-- Generuje se dynamicky -->
+                    </div>
+                </div>
+
+                <!-- Chytrý metronom a rytmy -->
+                <div class="card glass">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                        <h3 style="padding-right:0; margin-bottom:0;">Chytrý metronom a rytmy</h3>
+                        <button id="btn-add-rhythm-trigger" class="btn-add-news" style="display:none; padding: 7px 12px; font-size:0.78rem;" onclick="openRhythmEditorModal()">+ Rytmus</button>
+                    </div>
+
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:8px;">
+                        <div>
+                            <span id="metro-bpm-label" style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">100</span>
+                            <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted);">BPM</span>
+                        </div>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <button class="tool-btn" onclick="adjustMetroBpm(-5)">-5</button>
+                            <button class="tool-btn" onclick="adjustMetroBpm(5)">+5</button>
+                            <button class="tool-btn" onclick="tapMetroTempo()" title="Vyťukej tempo">TAP</button>
+                        </div>
+                    </div>
+
+                    <input type="range" id="metro-bpm-slider" class="scrubber" min="40" max="220" value="100" style="margin: 12px 0;" oninput="setMetroBpm(this.value)">
+
+                    <div class="metro-beats-row" id="metro-beats-visual">
+                        <div class="metro-dot accent"></div>
+                        <div class="metro-dot"></div>
+                        <div class="metro-dot"></div>
+                        <div class="metro-dot"></div>
+                    </div>
+
+                    <button id="btn-metro-toggle" class="btn-submit" style="padding: 12px;" onclick="toggleMetronome()">Spustit metronom</button>
+
+                    <div class="section-title" style="margin-top: 16px;">Rytmy ke zpěvu</div>
+                    <div class="rhythm-chip-grid" id="rhythm-list-container">
+                        <!-- Rytmy se načtou dynamicky (bez semaforu) -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ZÁLOŽKA 2: AUDIO S VYHLEDÁVÁNÍM, ŘAZENÍM A SEMAFOREM -->
+        <div id="tab-audio" class="tab-content">
+            <div class="audio-controls-bar">
+                <div class="audio-top-row">
+                    <div style="flex: 1;">
+                        <input type="text" id="audio-search-input" class="form-input" style="margin:0;" placeholder="Hledat písničku..." oninput="renderSongs()">
+                    </div>
+                    <button id="btn-add-song-trigger" class="btn-add-news" style="display:none;" onclick="openSongEditorModalForNew()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                        Přidat
+                    </button>
+                </div>
+                <div>
+                    <select id="audio-sort-select" class="sort-select" onchange="changeSongSort(this.value)">
+                        <option value="mastery">Řadit: Podle toho, jak umím (Neumím nahoře)</option>
+                        <option value="newest">Řadit: Podle přidání (Nejnovější)</option>
+                        <option value="alpha">Řadit: Podle abecedy (A - Z)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid" id="audio-grid-container">
+                <!-- Písničky se generují dynamicky -->
+            </div>
+        </div>
+
+        <!-- ZÁLOŽKA 3: AKTUALITY -->
         <div id="tab-aktuality" class="tab-content active">
             <div class="aktuality-header">
                 <h2 style="font-size: 1.2rem; font-weight: 800;">Aktuality sboru</h2>
@@ -1055,7 +1441,7 @@
             </div>
         </div>
 
-        <!-- ZÁLOŽKA 2: KALENDÁŘ -->
+        <!-- ZÁLOŽKA 4: KALENDÁŘ -->
         <div id="tab-kalendar" class="tab-content">
             <div class="calendar-header">
                 <button class="calendar-nav-btn" onclick="changeMonth(-1)" aria-label="Předchozí měsíc">
@@ -1082,38 +1468,19 @@
                 </div>
             </div>
 
+            <!-- Odpočet do nejbližší akce přímo pod kalendářem -->
+            <div id="calendar-next-event-countdown" class="countdown-pill-card" style="display:none;">
+                <span id="countdown-event-name">Nejbližší akce</span>
+                <span id="countdown-days-badge" style="background: var(--primary); color: #fff; padding: 4px 10px; border-radius: 12px; white-space: nowrap;">za X dní</span>
+            </div>
+
             <div class="section-title">Události v tomto měsíci</div>
             <div class="grid calendar-events-list" id="calendar-events-container">
                 <!-- Seznam událostí pro daný měsíc -->
             </div>
         </div>
 
-        <!-- ZÁLOŽKA 3: AUDIO S VYHLEDÁVÁNÍM, ŘAZENÍM A SEMAFOREM -->
-        <div id="tab-audio" class="tab-content">
-            <div class="audio-controls-bar">
-                <div class="audio-top-row">
-                    <div style="flex: 1;">
-                        <input type="text" id="audio-search-input" class="form-input" style="margin:0;" placeholder="Hledat písničku..." oninput="renderSongs()">
-                    </div>
-                    <button id="btn-add-song-trigger" class="btn-add-news" style="display:none;" onclick="openSongEditorModal()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-                        Přidat
-                    </button>
-                </div>
-                <div>
-                    <select id="audio-sort-select" class="sort-select" onchange="changeSongSort(this.value)">
-                        <option value="mastery">Řadit: Podle toho, jak umím (Neumím nahoře)</option>
-                        <option value="newest">Řadit: Podle přidání (Nejnovější)</option>
-                        <option value="alpha">Řadit: Podle abecedy (A - Z)</option>
-                    </select>
-                </div>
-            </div>
-            <div class="grid" id="audio-grid-container">
-                <!-- Písničky se generují dynamicky -->
-            </div>
-        </div>
-
-        <!-- ZÁLOŽKA 4: NASTAVENÍ -->
+        <!-- ZÁLOŽKA 5: NASTAVENÍ -->
         <div id="tab-nastaveni" class="tab-content">
             <div class="grid">
                 <div class="card glass">
@@ -1123,18 +1490,25 @@
                 </div>
                 
                 <div class="card glass">
-                    <h3 style="padding-right:0;">Upozornění a Kalendář</h3>
-                    <div class="toggle-row" style="margin-bottom: 12px;">
+                    <h3 style="padding-right:0;">Upozornění a karty</h3>
+                    <div class="toggle-row" style="margin-bottom: 10px;">
                         <span style="font-weight: 600; font-size: 0.9rem;">Upozornění nových aktualit</span>
                         <label class="switch">
                             <input type="checkbox" id="settings-notifications-toggle" onchange="toggleSetting('notifications', this)">
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="toggle-row">
+                    <div class="toggle-row" style="margin-bottom: 10px;">
                         <span style="font-weight: 600; font-size: 0.9rem;">Kalendář a události</span>
                         <label class="switch">
                             <input type="checkbox" id="settings-calendar-toggle" onchange="toggleSetting('calendar', this)" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <span style="font-weight: 600; font-size: 0.9rem;">Karta Cvičení (ladička a rytmy)</span>
+                        <label class="switch">
+                            <input type="checkbox" id="settings-practice-toggle" onchange="toggleSetting('practice', this)" checked>
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -1143,7 +1517,7 @@
                 <div class="card glass">
                     <h3 style="padding-right:0;">Učitelský přístup</h3>
                     <div id="teacher-login-box">
-                        <p style="margin-bottom: 8px;">Zadej heslo pro učitelské funkce (editace a řazení aktualit, nahrávání písní, vícehlasý režim):</p>
+                        <p style="margin-bottom: 8px;">Zadej heslo pro učitelské funkce (editace a řazení aktualit, nahrávání a úpravy písní, vícehlasý režim, přehled semaforu):</p>
                         <input type="password" id="input-teacher-password" class="form-input" placeholder="Zadej heslo..." style="margin-bottom: 10px;">
                         <button class="voice-btn" style="width:100%; background: var(--primary); color: white;" onclick="verifyTeacherPassword()">Přihlásit učitele</button>
                         <p id="teacher-auth-status" style="font-size: 0.8rem; margin-top: 8px; font-weight: 700;"></p>
@@ -1182,22 +1556,26 @@
         </div>
     </div>
 
-    <!-- Hlavní spodní dock -->
+    <!-- Hlavní spodní dock (Cvičení – Audio – Aktuality – Kalendář – Nastavení) -->
     <div class="nav-dock-wrapper">
         <div class="nav-dock">
-            <button class="nav-item active" onclick="switchTab('aktuality', event)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            <button class="nav-item" id="nav-btn-practice" onclick="switchTab('cviceni', event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                <span>Cvičení</span>
+            </button>
+            <button class="nav-item" id="nav-btn-audio" onclick="switchTab('audio', event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>
+                <span>Audio</span>
+            </button>
+            <button class="nav-item active" id="nav-btn-news" onclick="switchTab('aktuality', event)">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
                 <span>Aktuality</span>
             </button>
             <button class="nav-item" id="nav-btn-calendar" onclick="switchTab('kalendar', event)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                 <span>Kalendář</span>
             </button>
-            <button class="nav-item" onclick="switchTab('audio', event)">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-                <span>Audio</span>
-            </button>
-            <button class="nav-item" onclick="switchTab('nastaveni', event)" id="nav-btn-settings">
+            <button class="nav-item" id="nav-btn-settings" onclick="switchTab('nastaveni', event)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 <span>Nastavení</span>
                 <div class="update-dot" id="update-notification-dot"></div>
@@ -1215,9 +1593,9 @@
             
             <!-- AI ASISTENT V UČITELSKÉM PANELU -->
             <div style="background: rgba(99, 102, 241, 0.08); border: 1px dashed var(--primary); padding: 12px; border-radius: 14px; margin-bottom: 14px;">
-                <label style="font-size: 0.78rem; font-weight: 700; color: var(--primary); margin-top: 0;">✨ AI Asistent pro formátování:</label>
-                <textarea id="ai-surovy-vstup" class="editor-textarea" style="height: 70px; margin-top: 6px; margin-bottom: 8px;" placeholder="Napiš sem poznámku, např. Zítra odpadá zkouška..."></textarea>
-                <button class="btn" type="button" style="background: var(--primary); color: white; border: none; padding: 9px 14px; border-radius: 12px; font-weight: 700; font-size: 0.8rem; cursor: pointer; width: 100%; box-shadow: 0 4px 12px var(--primary-glow);" onclick="runAiAssistant()">✨ Vylepšit a oštítkovat přes AI</button>
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--primary); margin-top: 0;">✨ AI Asistent pro formátování (zná i písně a mapy):</label>
+                <textarea id="ai-surovy-vstup" class="editor-textarea" style="height: 70px; margin-top: 6px; margin-bottom: 8px;" placeholder="Napiš poznámku, např. Zítra zkoušíme písničku ... v kulturním domě..."></textarea>
+                <button class="btn" type="button" style="background: var(--primary); color: white; border: none; padding: 9px 14px; border-radius: 12px; font-weight: 700; font-size: 0.8rem; cursor: pointer; width: 100%; box-shadow: 0 4px 12px var(--primary-glow);" onclick="runAiAssistant(event)">✨ Vylepšit přes AI</button>
             </div>
 
             <input type="hidden" id="editor-editing-id" value="">
@@ -1228,8 +1606,11 @@
             <label style="font-size: 0.75rem; font-weight: 700;">Datum akce pro kalendář (Formát: DD.MM.YYYY)</label>
             <input type="text" id="editor-date" class="form-input" placeholder="např. 15.12.2026">
 
-            <label style="font-size: 0.75rem; font-weight: 700;">Odkaz na Google Mapy (volitelně)</label>
-            <input type="text" id="editor-map" class="form-input" placeholder="Vlož odkaz z Google Map...">
+            <label style="font-size: 0.75rem; font-weight: 700;">Odkaz nebo adresa pro Google Mapy (volitelně)</label>
+            <div style="display:flex; gap:6px; align-items:center; margin-top:8px; margin-bottom:14px;">
+                <input type="text" id="editor-map" class="form-input" style="margin:0; flex:1;" placeholder="Vlož odkaz z Google Map nebo název místa...">
+                <button type="button" class="tool-btn" style="padding:12px;" onclick="document.getElementById('editor-map').value=''" title="Smazat mapu">Smazat</button>
+            </div>
 
             <label style="font-size: 0.75rem; font-weight: 700;">Hlavní nadpis</label>
             <input type="text" id="editor-title" class="form-input" placeholder="Nadpis...">
@@ -1240,9 +1621,10 @@
             <label style="font-size: 0.75rem; font-weight: 700;">Detailní popis</label>
             
             <div class="editor-toolbar">
-                <button class="tool-btn" onclick="insertFormat('bold')"><b>B</b> Tučné</button>
-                <button class="tool-btn" onclick="insertFormat('underline')"><u>U</u> Podtržené</button>
-                <button class="tool-btn" onclick="insertFormat('bullet')">• Odrážka</button>
+                <button type="button" class="tool-btn" onclick="insertFormat('bold')"><b>B</b> Tučné</button>
+                <button type="button" class="tool-btn" onclick="insertFormat('underline')"><u>U</u> Podtržené</button>
+                <button type="button" class="tool-btn" onclick="insertFormat('bullet')">• Odrážka</button>
+                <button type="button" class="tool-btn" onclick="openInsertSongLinkModal()">🎵 Vložit tlačítko písně</button>
                 
                 <select id="tool-size" class="tool-btn" onchange="insertFormat('size', this.value)">
                     <option value="">Velikost písma</option>
@@ -1265,16 +1647,37 @@
         </div>
     </div>
 
-    <!-- Modální okno pro přidání písničky přes Supabase (Drag & Drop) -->
+    <!-- Modální okno: Vložit tlačítko na písničku do aktuality -->
+    <div id="insert-song-link-modal" class="modal-overlay center-dialog">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeInsertSongLinkModal()" aria-label="Zavřít">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <h3 style="font-size: 1.15rem; margin-bottom: 12px; color: var(--primary);">Vložit tlačítko písně</h3>
+            <label style="font-size: 0.75rem; font-weight: 700;">Vyber písničku</label>
+            <select id="insert-song-select" class="form-input" onchange="onInsertSongSelectChange()"></select>
+
+            <label style="font-size: 0.75rem; font-weight: 700;">Text na tlačítku</label>
+            <input type="text" id="insert-song-btn-label" class="form-input" placeholder="Pustit: Název písně">
+
+            <button class="btn-submit" onclick="confirmInsertSongLink()">Vložit tlačítko do textu</button>
+        </div>
+    </div>
+
+    <!-- Modální okno pro přidání nebo úpravu písničky přes Supabase -->
     <div id="song-editor-modal" class="modal-overlay">
         <div class="modal-card" style="padding-bottom: 40px;">
             <button class="modal-close" onclick="closeSongEditorModal()" aria-label="Zavřít">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <h3 style="font-size: 1.2rem; margin-bottom: 15px; color: var(--primary);">Přidat novou písničku</h3>
+            <h3 id="song-editor-modal-title" style="font-size: 1.2rem; margin-bottom: 15px; color: var(--primary);">Přidat novou písničku</h3>
+            <input type="hidden" id="song-editing-id" value="">
             
             <label style="font-size: 0.75rem; font-weight: 700;">Název písně</label>
             <input type="text" id="song-input-title" class="form-input" placeholder="Zadej název písně...">
+
+            <label style="font-size: 0.75rem; font-weight: 700;">Poznámka / tip od učitele ke skladbě (volitelně)</label>
+            <textarea id="song-input-note" class="editor-textarea" style="height: 75px;" placeholder="Např. Pozor na nádech v 16. taktu, refrén zpíváme jemně..."></textarea>
 
             <label style="font-size: 0.75rem; font-weight: 700;">Noty (PDF)</label>
             <div class="dropzone" id="dropzone-pdf" onclick="document.getElementById('file-pdf').click()">
@@ -1306,13 +1709,34 @@
                 <input type="file" id="file-bas" accept="audio/*" style="display:none" onchange="handleFileSelect(this, 'bas')">
             </div>
 
-            <label style="font-size: 0.75rem; font-weight: 700;">Doprovod (Volitelně)</label>
+            <label style="font-size: 0.75rem; font-weight: 700;">Doprovodné stopy (lze vybrat více souborů)</label>
+            <div id="existing-accompaniments-list" style="margin-top:6px;"></div>
             <div class="dropzone" id="dropzone-doprovod" onclick="document.getElementById('file-doprovod').click()">
-                <p id="label-doprovod">Přetáhni sem hudební doprovod nebo klikni</p>
-                <input type="file" id="file-doprovod" accept="audio/*" style="display:none" onchange="handleFileSelect(this, 'doprovod')">
+                <p id="label-doprovod">Přetáhni sem jeden nebo více doprovodů nebo klikni</p>
+                <input type="file" id="file-doprovod" accept="audio/*" multiple style="display:none" onchange="handleMultipleAccompanimentsSelect(this)">
             </div>
 
-            <button class="btn-submit" id="btn-upload-song" onclick="uploadAndSaveSongToSupabase()">Nahrát písničku do sboru</button>
+            <button class="btn-submit" id="btn-upload-song" onclick="uploadAndSaveSongToSupabase()">Uložit písničku</button>
+        </div>
+    </div>
+
+    <!-- Modální okno: Přidat rytmus do Cvičení (Učitel) -->
+    <div id="rhythm-editor-modal" class="modal-overlay center-dialog">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeRhythmEditorModal()" aria-label="Zavřít">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <h3 style="font-size: 1.15rem; margin-bottom: 12px; color: var(--primary);">Přidat nový rytmus</h3>
+            <label style="font-size: 0.75rem; font-weight: 700;">Název rytmu</label>
+            <input type="text" id="rhythm-input-name" class="form-input" placeholder="Např. Valčík 3/4, Pochod 4/4, Synkopa...">
+
+            <label style="font-size: 0.75rem; font-weight: 700;">Počet dob v taktu (2 až 8)</label>
+            <input type="number" id="rhythm-input-beats" class="form-input" min="2" max="8" value="4">
+
+            <label style="font-size: 0.75rem; font-weight: 700;">Doporučené tempo (BPM)</label>
+            <input type="number" id="rhythm-input-bpm" class="form-input" min="40" max="220" value="100">
+
+            <button class="btn-submit" onclick="saveNewRhythm()">Přidat rytmus do Cvičení</button>
         </div>
     </div>
 
@@ -1336,6 +1760,9 @@
             <h3 id="modal-song-title" style="font-size: 1.3rem; margin-bottom: 4px; padding-right: 35px;">Název písně</h3>
             <p id="modal-user-voice-label" style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px;">Přehrát part</p>
 
+            <!-- Poznámka od učitele -->
+            <div id="modal-song-teacher-note" class="song-teacher-note-box" style="display:none;"></div>
+
             <!-- Osobní hodnocení znalosti písně žákem -->
             <div class="section-title" style="margin-top: 0;">Jak tuto písničku umím</div>
             <div class="mastery-selector-modal" id="modal-mastery-controls">
@@ -1354,6 +1781,23 @@
             </div>
             
             <div id="modal-sec-audio" class="modal-section active">
+                <!-- Plynulá rychlost přehrávání -->
+                <div class="speed-control-bar">
+                    <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">Rychlost přehrávání</span>
+                    <button type="button" class="speed-toggle-btn" id="btn-speed-toggle" onclick="toggleSpeedPopover()">1.00x</button>
+                </div>
+
+                <div class="speed-popover-panel" id="speed-popover-panel">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-size: 0.78rem; font-weight: 700;">Táhni po 0.05 nebo zadej číslo:</span>
+                        <button type="button" class="tool-btn" onclick="setAudioPlaybackRate(1.0)">Reset 1.00x</button>
+                    </div>
+                    <div class="speed-input-row">
+                        <input type="range" id="audio-speed-slider" class="scrubber" min="0.5" max="1.5" step="0.05" value="1" oninput="setAudioPlaybackRate(this.value)">
+                        <input type="number" id="audio-speed-number" class="speed-number-input" min="0.5" max="1.5" step="0.05" value="1.00" onchange="setAudioPlaybackRate(this.value)">
+                    </div>
+                </div>
+
                 <div class="section-title" id="audio-section-header">Tvůj hlas</div>
                 <div id="modal-voice-container"></div>
 
@@ -1411,6 +1855,17 @@
         </div>
     </div>
 
+    <!-- Naše vlastní vyskakovací okno pro srozumitelné hlášky a potvrzení -->
+    <div id="custom-dialog-modal" class="modal-overlay center-dialog">
+        <div class="modal-card">
+            <h3 id="custom-dialog-title" style="font-size: 1.15rem; margin-bottom: 8px; color: var(--primary); padding-right:0;">Oznámení</h3>
+            <p id="custom-dialog-message" style="font-size: 0.94rem; line-height: 1.55; margin-bottom: 18px;">Zpráva...</p>
+            <div id="custom-dialog-buttons" style="display:flex; gap:10px;">
+                <button class="btn-submit" onclick="closeCustomDialog()">Rozumím</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // === NASTAVENÍ FIREBASE ===
         const firebaseConfig = {
@@ -1423,6 +1878,7 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const messaging = firebase.messaging();
 
         // Povolení offline perzistence pro Firestore
         db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
@@ -1432,9 +1888,7 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR0anJoenpibnZnc3dmaHVwdGNrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1MDg0MjIsImV4cCI6MjExMDA4NDQyMn0.K9LMRV2np860uhbqydshNpXwbRl0SceqD65vLD6AChs';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // === GEMINI AI KLÍČ ===
-        const GEMINI_API_KEY = "AQ.Ab8RN6Lrf8fOaULE_LBYfEUJcowXGkVx4SXTK4FQLuzrpAvslA";
-
+        const VAPID_KEY = "BMmDJrrFng4Ajjz6y0_gM03YfvgYc-dq87PXufyyMecMA5J-MjzVXE0T-Osnk-AToh5tEAdppByFdNScGSKvNcI";
         const OFFLINE_MEDIA_CACHE = 'zdaracek-offline-media-v1';
 
         let selectedVoiceGroup = '';
@@ -1442,13 +1896,93 @@
         let currentPlayingPlayer = null;
         let currentObjectUrl = null;
         let updateInterval = null;
+        let currentPlaybackSpeed = 1.0;
 
         let currentCalendarDate = new Date();
         let globalNewsList = [];
         let globalSongsList = [];
+        let globalMasteryStats = {};
+        let globalRhythmsList = [];
         let currentOpenedSongId = null;
 
-        let uploadedFiles = { pdf: null, sopran: null, alt: null, tenor: null, bas: null, doprovod: null };
+        let uploadedFiles = { pdf: null, sopran: null, alt: null, tenor: null, bas: null };
+        let uploadedAccompanimentFiles = [];
+        let existingAccompanimentsEdit = {};
+
+        // === SROZUMITELNÉ CHYBOVÉ HLÁŠKY A VLASTNÍ OKNA ===
+        function translateErrorToCzech(err) {
+            const raw = (err && (err.message || err.toString())) ? String(err.message || err) : '';
+            const lower = raw.toLowerCase();
+
+            if (!navigator.onLine || lower.includes('network') || lower.includes('failed to fetch') || lower.includes('offline')) {
+                return 'Vypadá to, že nejsi připojený k internetu. Zkontroluj prosím Wi-Fi nebo mobilní data a zkus to znovu.';
+            }
+            if (lower.includes('permission') || lower.includes('denied') || lower.includes('403') || lower.includes('unauthorized')) {
+                return 'Nemáš oprávnění tuto akci provést nebo vypršelo přihlášení.';
+            }
+            if (lower.includes('payload') || lower.includes('too large') || lower.includes('413') || lower.includes('size')) {
+                return 'Nahrávaný soubor je příliš velký. Zkus prosím vybrat menší soubor.';
+            }
+            if (lower.includes('quota') || lower.includes('429') || lower.includes('rate')) {
+                return 'Služba je teď dočasně vytížená. Počkej prosím chvilku a zkus to znovu.';
+            }
+            if (lower.includes('not found') || lower.includes('404')) {
+                return 'Požadovaný soubor nebo záznam už nebyl nalezen.';
+            }
+            if (lower.includes('500') || lower.includes('502') || lower.includes('503') || lower.includes('506')) {
+                return 'Server má momentálně krátký výpadek. Zkus to prosím za okamžik znovu.';
+            }
+            return 'Něco se nepovedlo. Zkus to prosím za chvilku znovu.';
+        }
+
+        function showAppAlert(message, title = 'Oznámení') {
+            document.getElementById('custom-dialog-title').innerText = title;
+            document.getElementById('custom-dialog-message').innerText = message;
+            document.getElementById('custom-dialog-buttons').innerHTML = `
+                <button class="btn-submit" onclick="closeCustomDialog()">Rozumím</button>
+            `;
+            document.getElementById('custom-dialog-modal').classList.add('active');
+        }
+
+        function showAppConfirm(message, onConfirm, title = 'Potvrzení') {
+            document.getElementById('custom-dialog-title').innerText = title;
+            document.getElementById('custom-dialog-message').innerText = message;
+            const btns = document.getElementById('custom-dialog-buttons');
+            btns.innerHTML = '';
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'voice-btn';
+            cancelBtn.style.flex = '1';
+            cancelBtn.innerText = 'Zrušit';
+            cancelBtn.onclick = closeCustomDialog;
+
+            const okBtn = document.createElement('button');
+            okBtn.className = 'btn-submit';
+            okBtn.style.flex = '1';
+            okBtn.innerText = 'Potvrdit';
+            okBtn.onclick = () => {
+                closeCustomDialog();
+                onConfirm();
+            };
+
+            btns.appendChild(cancelBtn);
+            btns.appendChild(okBtn);
+            document.getElementById('custom-dialog-modal').classList.add('active');
+        }
+
+        function closeCustomDialog() {
+            document.getElementById('custom-dialog-modal').classList.remove('active');
+        }
+
+        // === ANONYMNÍ ID ZAŘÍZENÍ PRO STATISTIKU SEMAFORU ===
+        function getAnonymousDeviceId() {
+            let id = localStorage.getItem('sbor_anon_device_id');
+            if (!id) {
+                id = 'anon_' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+                localStorage.setItem('sbor_anon_device_id', id);
+            }
+            return id;
+        }
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -1471,11 +2005,14 @@
             loadProfileData();
             initTeacherState();
             initSettingsToggles();
+            initPianoKeyboard();
 
             loadCachedDataImmediately();
 
             listenToNews();
             listenToSongs();
+            listenToMasteryStats();
+            listenToRhythms();
             initDragAndDrop();
 
             const savedSort = localStorage.getItem('sbor_song_sort') || 'mastery';
@@ -1520,7 +2057,7 @@
         async function syncAllOfflineMedia(showAlert = false) {
             if (!('caches' in window)) return;
             if (!navigator.onLine) {
-                if (showAlert) alert('Jsi offline. Pro stažení nových souborů se připoj k internetu.');
+                if (showAlert) showAppAlert('Jsi offline. Pro stažení nových souborů se připoj k internetu.', 'Offline režim');
                 return;
             }
 
@@ -1541,7 +2078,6 @@
                     }
                 });
 
-                let downloadedCount = 0;
                 for (const url of urlsToCache) {
                     const existing = await cache.match(url);
                     if (!existing) {
@@ -1549,7 +2085,6 @@
                             const response = await fetch(url, { mode: 'cors' });
                             if (response.ok) {
                                 await cache.put(url, response.clone());
-                                downloadedCount++;
                             }
                         } catch (err) {}
                     }
@@ -1559,10 +2094,10 @@
                     statusInfo.innerText = `Offline připraveno (${urlsToCache.size} souborů uloženo v paměti telefonu).`;
                 }
                 if (showAlert) {
-                    alert(`Hotovo! Všechny písničky a noty (${urlsToCache.size} souborů) jsou uloženy v telefonu pro použití offline.`);
+                    showAppAlert(`Hotovo! Všechny písničky a noty (${urlsToCache.size} souborů) jsou uloženy v telefonu pro použití offline.`, 'Offline staženo');
                 }
             } catch (e) {
-                if (showAlert) alert('Nepodařilo se uložit některé soubory do mezipaměti.');
+                if (showAlert) showAppAlert(translateErrorToCzech(e), 'Chyba stahování');
             }
         }
 
@@ -1581,7 +2116,7 @@
             return url;
         }
 
-        // === ZNALOST PÍSNIČEK (SEMAFOR ŽÁKA) ===
+        // === ZNALOST PÍSNIČEK (SEMAFOR ŽÁKA + ANONYMNÍ STATISTIKA PRO UČITELE) ===
         function getMasteryMap() {
             try {
                 return JSON.parse(localStorage.getItem('sbor_song_mastery') || '{}');
@@ -1597,6 +2132,33 @@
             localStorage.setItem('sbor_song_mastery', JSON.stringify(map));
             renderSongs();
             updateModalMasteryButtons(songId);
+
+            // Anonymní odeslání stavu semaforu (bez jména uživatele)
+            const anonId = getAnonymousDeviceId();
+            db.collection('song_mastery_stats').doc(`${songId}_${anonId}`).set({
+                songId: songId,
+                level: level,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).catch(() => {});
+        }
+
+        function listenToMasteryStats() {
+            db.collection('song_mastery_stats').onSnapshot(snapshot => {
+                const stats = {};
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    if (!d.songId || !d.level) return;
+                    if (!stats[d.songId]) {
+                        stats[d.songId] = { 1: 0, 2: 0, 3: 0, total: 0 };
+                    }
+                    if (d.level === 1 || d.level === 2 || d.level === 3) {
+                        stats[d.songId][d.level]++;
+                        stats[d.songId].total++;
+                    }
+                });
+                globalMasteryStats = stats;
+                renderSongs();
+            }, () => {});
         }
 
         function setModalSongMastery(level) {
@@ -1626,6 +2188,7 @@
                     globalSongsList.push({
                         id: doc.id,
                         title: data.title || '',
+                        note: data.note || '',
                         voices: data.voices || {},
                         accompaniments: data.accompaniments || null,
                         pdf: data.pdf || '',
@@ -1635,7 +2198,7 @@
                 localStorage.setItem('sbor_cache_songs', JSON.stringify(globalSongsList));
                 renderSongs();
                 syncAllOfflineMedia(false);
-            }, err => {
+            }, () => {
                 loadCachedDataImmediately();
             });
         }
@@ -1676,24 +2239,65 @@
                 card.className = 'card glass song-card';
                 const currentLevel = masteryMap[song.id] || 0;
 
-                const deleteBtnHTML = isTeacher ? `
+                const teacherBtnsHTML = isTeacher ? `
+                    <button class="btn-news-action" onclick="openSongEditorModalForEdit('${song.id}', event)" title="Upravit písničku">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    </button>
                     <button class="btn-news-action btn-news-delete" onclick="deleteSong('${song.id}', event)" title="Smazat písničku">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                     </button>
                 ` : '';
 
+                // Anonymní procentuální přehled semaforu pouze v učitelském režimu
+                let teacherStatsHTML = '';
+                if (isTeacher) {
+                    const st = globalMasteryStats[song.id] || { 1: 0, 2: 0, 3: 0, total: 0 };
+                    if (st.total > 0) {
+                        const pGreen = Math.round((st[3] / st.total) * 100);
+                        const pOrange = Math.round((st[2] / st.total) * 100);
+                        const pRed = Math.max(0, 100 - pGreen - pOrange);
+                        const avgScore = Math.round(((st[3] * 100 + st[2] * 50 + st[1] * 0) / st.total));
+                        teacherStatsHTML = `
+                            <div class="teacher-mastery-bar-wrap" onclick="event.stopPropagation()">
+                                <div class="teacher-mastery-bar">
+                                    <div class="teacher-bar-seg green" style="width:${pGreen}%"></div>
+                                    <div class="teacher-bar-seg orange" style="width:${pOrange}%"></div>
+                                    <div class="teacher-bar-seg red" style="width:${pRed}%"></div>
+                                </div>
+                                <div class="teacher-mastery-legend">
+                                    <span>Průměr sboru: ${avgScore} %</span>
+                                    <span>🟢 ${pGreen}% • 🟠 ${pOrange}% • 🔴 ${pRed}%</span>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        teacherStatsHTML = `
+                            <div class="teacher-mastery-bar-wrap" onclick="event.stopPropagation()">
+                                <div class="teacher-mastery-bar"></div>
+                                <div class="teacher-mastery-legend">
+                                    <span>Zatím bez hodnocení členů</span>
+                                    <span>0 %</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+
                 card.innerHTML = `
-                    <div class="song-info">
-                        <h3>${song.title}</h3>
-                        <span>Nahrávky a noty</span>
+                    <div class="song-card-main">
+                        <div class="song-info">
+                            <h3>${song.title}</h3>
+                            <span>${song.note ? 'Poznámka učitele • ' : ''}Nahrávky a noty</span>
+                        </div>
+                        <div class="mastery-pills" onclick="event.stopPropagation()" title="Označ jak písničku umíš">
+                            <div class="mastery-dot red ${currentLevel === 1 ? 'active' : ''}" onclick="setSongMastery('${song.id}', 1, event)" title="Vůbec neumím"></div>
+                            <div class="mastery-dot orange ${currentLevel === 2 ? 'active' : ''}" onclick="setSongMastery('${song.id}', 2, event)" title="Umím středně"></div>
+                            <div class="mastery-dot green ${currentLevel === 3 ? 'active' : ''}" onclick="setSongMastery('${song.id}', 3, event)" title="Umím"></div>
+                        </div>
+                        ${teacherBtnsHTML}
+                        <svg viewBox="0 0 24 24" width="22" height="22" fill="var(--primary)" style="flex-shrink:0;"><path d="M8 5v14l11-7z"/></svg>
                     </div>
-                    <div class="mastery-pills" onclick="event.stopPropagation()" title="Označ jak písničku umíš">
-                        <div class="mastery-dot red ${currentLevel === 1 ? 'active' : ''}" onclick="setSongMastery('${song.id}', 1, event)" title="Vůbec neumím"></div>
-                        <div class="mastery-dot orange ${currentLevel === 2 ? 'active' : ''}" onclick="setSongMastery('${song.id}', 2, event)" title="Umím středně"></div>
-                        <div class="mastery-dot green ${currentLevel === 3 ? 'active' : ''}" onclick="setSongMastery('${song.id}', 3, event)" title="Umím"></div>
-                    </div>
-                    ${deleteBtnHTML}
-                    <svg viewBox="0 0 24 24" width="22" height="22" fill="var(--primary)" style="flex-shrink:0;"><path d="M8 5v14l11-7z"/></svg>
+                    ${teacherStatsHTML}
                 `;
 
                 card.onclick = () => openSongModal(song);
@@ -1714,8 +2318,13 @@
                 zone.addEventListener('drop', (e) => {
                     const files = e.dataTransfer.files;
                     if (files.length > 0) {
-                        uploadedFiles[key] = files[0];
-                        document.getElementById('label-' + key).innerText = 'Vybráno: ' + files[0].name;
+                        if (key === 'doprovod') {
+                            uploadedAccompanimentFiles = Array.from(files);
+                            document.getElementById('label-doprovod').innerText = `Vybráno doprovodů: ${uploadedAccompanimentFiles.length}`;
+                        } else {
+                            uploadedFiles[key] = files[0];
+                            document.getElementById('label-' + key).innerText = 'Vybráno: ' + files[0].name;
+                        }
                     }
                 });
             });
@@ -1728,13 +2337,81 @@
             }
         }
 
-        function openSongEditorModal() {
-            document.getElementById('song-input-title').value = '';
-            uploadedFiles = { pdf: null, sopran: null, alt: null, tenor: null, bas: null, doprovod: null };
-            ['pdf', 'sopran', 'alt', 'tenor', 'bas', 'doprovod'].forEach(k => {
-                const labels = { pdf: 'PDF noty', sopran: 'sopránový part', alt: 'altový part', tenor: 'tenorní part', bas: 'basový part', doprovod: 'hudební doprovod' };
-                document.getElementById('label-' + k).innerText = `Přetáhni sem ${labels[k]} nebo klikni pro výběr`;
+        function handleMultipleAccompanimentsSelect(input) {
+            if (input.files.length > 0) {
+                uploadedAccompanimentFiles = Array.from(input.files);
+                document.getElementById('label-doprovod').innerText = `Vybráno nových doprovodů: ${uploadedAccompanimentFiles.length}`;
+            }
+        }
+
+        function renderExistingAccompanimentsEditor() {
+            const container = document.getElementById('existing-accompaniments-list');
+            container.innerHTML = '';
+            const entries = Object.entries(existingAccompanimentsEdit || {});
+            if (entries.length === 0) return;
+
+            entries.forEach(([accName]) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:var(--input-bg); padding:8px 12px; border-radius:12px; margin-bottom:6px; border:1px solid var(--card-border); font-size:0.82rem; font-weight:700;';
+                row.innerHTML = `
+                    <span>🎵 ${accName}</span>
+                    <button type="button" class="tool-btn" style="color:#ff3b30;" onclick="removeExistingAccompaniment('${accName.replace(/'/g, "\\'")}')">Odstranit</button>
+                `;
+                container.appendChild(row);
             });
+        }
+
+        function removeExistingAccompaniment(accName) {
+            delete existingAccompanimentsEdit[accName];
+            renderExistingAccompanimentsEditor();
+        }
+
+        function openSongEditorModalForNew() {
+            document.getElementById('song-editor-modal-title').innerText = 'Přidat novou písničku';
+            document.getElementById('song-editing-id').value = '';
+            document.getElementById('song-input-title').value = '';
+            document.getElementById('song-input-note').value = '';
+            uploadedFiles = { pdf: null, sopran: null, alt: null, tenor: null, bas: null };
+            uploadedAccompanimentFiles = [];
+            existingAccompanimentsEdit = {};
+            renderExistingAccompanimentsEditor();
+
+            ['pdf', 'sopran', 'alt', 'tenor', 'bas', 'doprovod'].forEach(k => {
+                const labels = {
+                    pdf: 'Přetáhni sem PDF noty nebo klikni pro výběr',
+                    sopran: 'Přetáhni sem sopránový part nebo klikni',
+                    alt: 'Přetáhni sem altový part nebo klikni',
+                    tenor: 'Přetáhni sem tenorní part nebo klikni',
+                    bas: 'Přetáhni sem basový part nebo klikni',
+                    doprovod: 'Přetáhni sem jeden nebo více doprovodů nebo klikni'
+                };
+                document.getElementById('label-' + k).innerText = labels[k];
+            });
+            document.getElementById('song-editor-modal').classList.add('active');
+        }
+
+        function openSongEditorModalForEdit(songId, event) {
+            if (event) event.stopPropagation();
+            const song = globalSongsList.find(s => s.id === songId);
+            if (!song) return;
+
+            document.getElementById('song-editor-modal-title').innerText = 'Upravit písničku';
+            document.getElementById('song-editing-id').value = song.id;
+            document.getElementById('song-input-title').value = song.title || '';
+            document.getElementById('song-input-note').value = song.note || '';
+
+            uploadedFiles = { pdf: null, sopran: null, alt: null, tenor: null, bas: null };
+            uploadedAccompanimentFiles = [];
+            existingAccompanimentsEdit = song.accompaniments ? { ...song.accompaniments } : {};
+            renderExistingAccompanimentsEditor();
+
+            document.getElementById('label-pdf').innerText = song.pdf ? '✅ PDF nahráno (klikni pro nahrazení)' : 'Přetáhni sem PDF noty nebo klikni pro výběr';
+            document.getElementById('label-sopran').innerText = song.voices?.Soprán ? '✅ Soprán nahrán (klikni pro nahrazení)' : 'Přetáhni sem sopránový part nebo klikni';
+            document.getElementById('label-alt').innerText = song.voices?.Alt ? '✅ Alt nahrán (klikni pro nahrazení)' : 'Přetáhni sem altový part nebo klikni';
+            document.getElementById('label-tenor').innerText = song.voices?.Tenor ? '✅ Tenor nahrán (klikni pro nahrazení)' : 'Přetáhni sem tenorní part nebo klikni';
+            document.getElementById('label-bas').innerText = song.voices?.Bas ? '✅ Bas nahrán (klikni pro nahrazení)' : 'Přetáhni sem basový part nebo klikni';
+            document.getElementById('label-doprovod').innerText = 'Přidat další doprovodné stopy (lze vybrat více)';
+
             document.getElementById('song-editor-modal').classList.add('active');
         }
 
@@ -1749,44 +2426,55 @@
                 .replace(/[^a-zA-Z0-9._-]/g, "_");
         }
 
+        async function uploadFileToSupabase(file) {
+            const safeName = `${Date.now()}_${Math.random().toString(36).substring(2, 6)}_${sanitizeFileName(file.name)}`;
+            const { error } = await supabaseClient.storage
+                .from('sbor-files')
+                .upload(safeName, file, { cacheControl: '31536000', upsert: false });
+
+            if (error) throw error;
+
+            const { data: publicURLData } = supabaseClient.storage
+                .from('sbor-files')
+                .getPublicUrl(safeName);
+
+            return publicURLData.publicUrl;
+        }
+
         async function uploadAndSaveSongToSupabase() {
+            const editingId = document.getElementById('song-editing-id').value;
             const title = document.getElementById('song-input-title').value.trim();
-            if (!title) { alert('Zadej název písně!'); return; }
+            const note = document.getElementById('song-input-note').value.trim();
+
+            if (!title) {
+                showAppAlert('Zadej prosím název písně!');
+                return;
+            }
 
             const submitBtn = document.getElementById('btn-upload-song');
-            submitBtn.innerText = 'Nahrávám soubory do Supabase...';
+            submitBtn.innerText = 'Ukládám písničku...';
             submitBtn.disabled = true;
 
             try {
+                const existingSong = editingId ? globalSongsList.find(s => s.id === editingId) : null;
+
                 let songData = {
                     title: title,
-                    voices: {},
-                    accompaniments: null,
-                    pdf: '',
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    note: note,
+                    voices: existingSong && existingSong.voices ? { ...existingSong.voices } : {},
+                    accompaniments: { ...existingAccompanimentsEdit },
+                    pdf: existingSong ? (existingSong.pdf || '') : ''
                 };
+
+                if (!editingId) {
+                    songData.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+                }
 
                 for (let key in uploadedFiles) {
                     if (uploadedFiles[key]) {
-                        const file = uploadedFiles[key];
-                        const safeName = `${Date.now()}_${sanitizeFileName(file.name)}`;
-
-                        const { error } = await supabaseClient.storage
-                            .from('sbor-files')
-                            .upload(safeName, file, { cacheControl: '31536000', upsert: false });
-
-                        if (error) throw error;
-
-                        const { data: publicURLData } = supabaseClient.storage
-                            .from('sbor-files')
-                            .getPublicUrl(safeName);
-
-                        const downloadUrl = publicURLData.publicUrl;
-
+                        const downloadUrl = await uploadFileToSupabase(uploadedFiles[key]);
                         if (key === 'pdf') {
                             songData.pdf = downloadUrl;
-                        } else if (key === 'doprovod') {
-                            songData.accompaniments = { 'Doprovod': downloadUrl };
                         } else {
                             const mapVoice = { sopran: 'Soprán', alt: 'Alt', tenor: 'Tenor', bas: 'Bas' };
                             songData.voices[mapVoice[key]] = downloadUrl;
@@ -1794,93 +2482,116 @@
                     }
                 }
 
-                await db.collection("songs").add(songData);
+                if (uploadedAccompanimentFiles.length > 0) {
+                    for (let i = 0; i < uploadedAccompanimentFiles.length; i++) {
+                        const file = uploadedAccompanimentFiles[i];
+                        const downloadUrl = await uploadFileToSupabase(file);
+                        const baseName = file.name.replace(/\.[^/.]+$/, "");
+                        const label = uploadedAccompanimentFiles.length === 1 && Object.keys(songData.accompaniments).length === 0
+                            ? 'Doprovod'
+                            : `Doprovod: ${baseName}`;
+                        songData.accompaniments[label] = downloadUrl;
+                    }
+                }
+
+                if (Object.keys(songData.accompaniments).length === 0) {
+                    songData.accompaniments = null;
+                }
+
+                if (editingId) {
+                    await db.collection("songs").doc(editingId).update(songData);
+                } else {
+                    await db.collection("songs").add(songData);
+                }
+
                 closeSongEditorModal();
             } catch (err) {
-                alert('Chyba při nahrávání do Supabase: ' + err.message);
+                showAppAlert(translateErrorToCzech(err), 'Chyba při ukládání písně');
             } finally {
-                submitBtn.innerText = 'Nahrát písničku do sboru';
+                submitBtn.innerText = 'Uložit písničku';
                 submitBtn.disabled = false;
             }
         }
 
         function deleteSong(songId, event) {
             event.stopPropagation();
-            if (confirm('Opravdu chceš tuto písničku smazat?')) {
-                db.collection("songs").doc(songId).delete();
-            }
+            showAppConfirm('Opravdu chceš tuto písničku smazat ze sboru?', () => {
+                db.collection("songs").doc(songId).delete().catch(err => {
+                    showAppAlert(translateErrorToCzech(err), 'Chyba mazání');
+                });
+            }, 'Smazat písničku');
         }
 
-        
-
-
-            // === AI ASISTENT PRO AKTUALITY (GOOGLE GEN AI SDK) ===
-        async function runAiAssistant() {
+        // === AI ASISTENT PRO AKTUALITY (RYCHLÝ + ZNÁ PÍSNĚ I MAPY) ===
+        async function runAiAssistant(event) {
             const surovyVstup = document.getElementById('ai-surovy-vstup').value.trim();
             if (!surovyVstup) {
-                alert('Nejprve napiš poznámku pro AI!');
+                showAppAlert('Nejprve napiš krátkou poznámku pro AI asistenta!');
                 return;
             }
 
             const btn = event.currentTarget;
             const originalText = btn.innerText;
-            btn.innerText = 'AI tvoří aktualitu... 🪄';
+            btn.innerText = 'AI tvoří aktualitu... ✨';
             btn.disabled = true;
 
             try {
-                const kontextStranky = document.body.innerText.slice(0, 6000);
                 const cast1 = "AQ.Ab8RN6LsrOy4bhdN";
                 const cast2 = "gwI5MpTKrhGJ";
                 const cast3 = "3FJNh_x6E50j-hXWYhMB3";
-                
-                // Dynamický import oficiální knihovny
-                const { GoogleGenAI } = await import("@google/genai");
-                const ai = new GoogleGenAI({ apiKey: cast1 + cast2 + cast3 +"A"});
 
-                const prompt = `Jsi asistent pro dětský sbor Žďáráček. Zde je okolní obsah webu pro tvůj kontext: "${kontextStranky}". Zpracuj tuto poznámku od učitele (pro info normálně zkoušky jsou ve čtvrtek a v pondělí od 16:00 do 17:30): "${surovyVstup}". 
-                Vrať odpověď PŘESNĚ v tomto formátu odděleném značkami, nic jiného nepřidávej:
-                [NADPIS] Krátký! a chytlavý nadpis
-                [STITEK] Jedno slovo vystihující téma aktuality
-                [DATUM] Napiš POUZE datum ve formátu DD.MM.YYYY (např. 15.12.2026). Pokud v textu žádné datum není, nech toto pole ÚPLNĚ PRÁZDNÉ a nic sem nevypisuj. (někdy se spleteš že tam dáš strucny ale ten tam nedavej!!!!!!!!)
-                [STRUCNY] Krátká věta jako shrnutí na kartu
-                [DETAIL] Hezky naformátovaný, přátelský text pro větší děti, můžeš použít HTML tagy jako <b style="color:var(--primary);">tučné</b> nebo odrážky. Můžeš použít všechny dostupné funkce k tomu aby aktualita byla přehledná, čistá a můžeš použít i štítky a všechno možné, i časové osy všech druhů na straně nebo dole, časové osy plánu programu používej často takovéty s tím Proužkem na straně a číslama vedle neho, nebo i tlačítko s odkazem pokud bude řečeno. Nedělej mezery mezi odrážkami a textem, piš je hned za sebou. Pokud je v textu odkaz, dej ho do tlačítka s textem "Více informací" a odkazem na danou stránku. Pokud je v textu zmíněn čas, dej ho do časové osy. Pokud je v textu zmíněno místo, dej ho do časové osy. Pokud je v textu zmíněn program, dej ho do časové osy. Pokud je v textu zmíněn plán, dej ho do časové osy. Pokud je v textu zmíněn seznam, dej ho do odrážek. Pokud je v textu zmíněn odkaz, dej ho do tlačítka s textem "Více informací" a odkazem na danou stránku. Pokud je v textu zmíněn čas, dej ho do časové osy. Pokud je v textu zmíněn místo, dej ho do časové osy. Pokud je v textu zmíněn program, dej ho do časové osy. Pokud je v textu zmíněn plán, dej ho do časové osy. Pokud je v textu zmíněn seznam, dej ho do odrážek.`;
+                const { GoogleGenAI } = await import("@google/genai");
+                const ai = new GoogleGenAI({ apiKey: cast1 + cast2 + cast3 + "A" });
+
+                const seznamPisni = globalSongsList.map(s => s.title).join(', ') || 'žádné písně zatím nejsou';
+
+                const prompt = `Jsi rychlý asistent pro dětský sbor Žďáráček (běžné zkoušky jsou v pondělí a ve čtvrtek 16:00–17:30).
+Seznam písní v aplikaci: [${seznamPisni}].
+Zpracuj zadání učitele: "${surovyVstup}".
+
+Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
+[NADPIS] Krátký výstižný nadpis
+[STITEK] Jednoslovná kategorie (např. ZKOUŠKA, KONCERT, SOUSTŘEDĚNÍ, INFO)
+[DATUM] POUZE datum DD.MM.YYYY (např. 15.12.2026), pokud v zadání datum není, nech úplně prázdné (kdyžtak pochop z kontextu, že pokud učitel řekne, že zkouška nebude, tak datum bude nejbližší datum zkoušky, normálně jsou zkoušky ve čtvrtek 16:00–17:30 a v pondělí 16:00–17:30, takže si dopočítej datum)
+[MAPA] Pokud je v zadání místo konání nebo odkaz na mapu, napiš sem přesný název místa/města nebo URL odkaz pro Google Mapy, jinak nech prázdné
+[STRUCNY] Krátká jedna věta na kartu aktuality
+[DETAIL] Přehledný a přátelský HTML text pro zpěváky )normálně jsou zkoušky ve čtvrtek 16:00–17:30 a v pondělí 16:00–17:30 tak si kdyžtak dopočítej datum kdž ti dá někdo, ze zitra neni zkouska nebo priste nebude zkouska znamena to ze to bude ten nejblizsi datum(používej <b style="color:var(--primary);">tučné</b>, odrážky • nebo přehlednou časovou osu programu s proužkem vlevo). Pokud učitel zmiňuje některou píseň ze seznamu nebo chce tlačítko na přehrání písně, vlož toto tlačítko: <button type="button" class="song-link-btn-inline" onclick="openSongByName('PŘESNÝ_NÁZEV_PÍSNĚ')">Pustit: PŘESNÝ_NÁZEV_PÍSNĚ</button>`;
 
                 const response = await ai.models.generateContent({
                     model: 'gemma-4-31b-it',
                     contents: prompt,
                 });
 
-
-                const odpovedAI = response.text;
+                const odpovedAI = response.text || '';
 
                 const nadpisMatch = odpovedAI.match(/\[NADPIS\]\s*([^\r\n]*)/);
                 const stitekMatch = odpovedAI.match(/\[STITEK\]\s*([^\r\n]*)/);
-                
-                // Pojištění pro datum: vezmeme jen to, co vypadá jako datum (tečky a čísla), jinak nechat prázdné
-                let datumValue = "";
                 const rawDatumMatch = odpovedAI.match(/\[DATUM\]\s*([^\r\n]*)/);
-                if (rawDatumMatch && rawDatumMatch[1]) {
-                    const cleanText = rawDatumMatch[1].trim();
-                    // Zkontrolujeme, jestli to obsahuje tečky a číslice (formát data) a neobsahuje to slovo STRUCNY
-                    if (cleanText.includes('.') && /\d/.test(cleanText) && !cleanText.includes('STRUCNY')) {
-                        datumValue = cleanText.match(/\d{1,2}\.\d{1,2}\.\d{4}/)?.[0] || cleanText;
-                    }
-                }
-
+                const mapaMatch = odpovedAI.match(/\[MAPA\]\s*([^\r\n]*)/);
                 const strucnyMatch = odpovedAI.match(/\[STRUCNY\]\s*([^\r\n]*)/);
                 const detailMatch = odpovedAI.match(/\[DETAIL\]\s*([\s\S]*)/);
 
+                let datumValue = "";
+                if (rawDatumMatch && rawDatumMatch[1]) {
+                    const cleanText = rawDatumMatch[1].trim();
+                    const foundDate = cleanText.match(/\d{1,2}\.\d{1,2}\.\d{4}/);
+                    if (foundDate) datumValue = foundDate[0];
+                }
+
+                let mapaValue = "";
+                if (mapaMatch && mapaMatch[1]) {
+                    const cleanMap = mapaMatch[1].trim();
+                    if (!cleanMap.startsWith('[')) mapaValue = cleanMap;
+                }
+
                 if (nadpisMatch) document.getElementById('editor-title').value = nadpisMatch[1].trim();
                 if (stitekMatch) document.getElementById('editor-tag').value = stitekMatch[1].trim();
-                
-                // Do data zapíšeme jen čistou hodnotu (pokud tam nějaká je)
                 document.getElementById('editor-date').value = datumValue;
-
+                if (mapaValue) document.getElementById('editor-map').value = mapaValue;
                 if (strucnyMatch) document.getElementById('editor-short').value = strucnyMatch[1].trim();
                 if (detailMatch) document.getElementById('editor-full').value = detailMatch[1].trim();
             } catch (err) {
-                console.error('AI chyba:', err);
-                alert('Chyba při vytváření aktuality: ' + (err.message || err));
+                showAppAlert(translateErrorToCzech(err), 'AI Asistent');
             } finally {
                 btn.innerText = originalText;
                 btn.disabled = false;
@@ -1899,7 +2610,7 @@
                         eventDate: d.eventDate || '',
                         title: d.title || '',
                         shortDesc: d.shortDesc || '',
-                        mapLink: d.mapLink || '', // <-- TOTO TADY CHYBĚLO!
+                        mapLink: d.mapLink || '',
                         fullDesc: d.fullDesc || '',
                         sortOrder: typeof d.sortOrder === 'number' ? d.sortOrder : null,
                         createdAtMs: d.timestamp && d.timestamp.toMillis ? d.timestamp.toMillis() : 0
@@ -1919,7 +2630,7 @@
                 localStorage.setItem('sbor_cache_news', JSON.stringify(globalNewsList));
                 renderNewsList();
                 renderCalendar();
-            }, err => {
+            }, () => {
                 loadCachedDataImmediately();
             });
         }
@@ -1954,7 +2665,7 @@
                         <div class="card-actions-absolute">
                             ${upBtn}
                             ${downBtn}
-                            <button class="btn-news-action" onclick="openEditorModalForEdit('${item.id}', '${encodeURIComponent(item.tag || '')}', '${encodeURIComponent(item.eventDate || '')}', '${encodeURIComponent(item.title || '')}', '${encodeURIComponent(item.shortDesc || '')}', '${encodeURIComponent(item.fullDesc || '')}', event)" title="Upravit">
+                            <button class="btn-news-action" onclick="openEditorModalForEditById('${item.id}', event)" title="Upravit">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                             </button>
                             <button class="btn-news-action btn-news-delete" onclick="deleteNews('${item.id}', event)" title="Smazat">
@@ -1993,12 +2704,69 @@
             globalNewsList = updatedList;
             renderNewsList();
 
-            const batch = db.batch();
-            updatedList.forEach((newsItem, idx) => {
-                const ref = db.collection("news").doc(newsItem.id);
-                batch.update(ref, { sortOrder: idx });
+            try {
+                const batch = db.batch();
+                updatedList.forEach((newsItem, idx) => {
+                    const ref = db.collection("news").doc(newsItem.id);
+                    batch.update(ref, { sortOrder: idx });
+                });
+                await batch.commit();
+            } catch (err) {
+                showAppAlert(translateErrorToCzech(err), 'Chyba řazení');
+            }
+        }
+
+        function parseCzechDate(dateStr) {
+            if (!dateStr) return null;
+            const parts = dateStr.trim().split('.');
+            if (parts.length < 3) return null;
+            const d = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10) - 1;
+            const y = parseInt(parts[2], 10);
+            if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
+            return new Date(y, m, d);
+        }
+
+        function updateCalendarCountdown() {
+            const box = document.getElementById('calendar-next-event-countdown');
+            const nameEl = document.getElementById('countdown-event-name');
+            const badgeEl = document.getElementById('countdown-days-badge');
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            let nearestEvent = null;
+            let nearestDiffDays = Infinity;
+
+            globalNewsList.forEach(item => {
+                const evDate = parseCzechDate(item.eventDate);
+                if (evDate) {
+                    evDate.setHours(0, 0, 0, 0);
+                    const diffDays = Math.round((evDate - today) / (1000 * 60 * 60 * 24));
+                    if (diffDays >= 0 && diffDays < nearestDiffDays) {
+                        nearestDiffDays = diffDays;
+                        nearestEvent = item;
+                    }
+                }
             });
-            await batch.commit();
+
+            if (!nearestEvent) {
+                box.style.display = 'none';
+                return;
+            }
+
+            box.style.display = 'flex';
+            nameEl.innerText = `Nejbližší akce: ${nearestEvent.title} (${nearestEvent.eventDate})`;
+
+            if (nearestDiffDays === 0) {
+                badgeEl.innerText = 'Dnes!';
+            } else if (nearestDiffDays === 1) {
+                badgeEl.innerText = 'Zítra';
+            } else if (nearestDiffDays >= 2 && nearestDiffDays <= 4) {
+                badgeEl.innerText = `za ${nearestDiffDays} dny`;
+            } else {
+                badgeEl.innerText = `za ${nearestDiffDays} dní`;
+            }
         }
 
         function renderCalendar() {
@@ -2052,7 +2820,7 @@
                     cell.classList.add('has-event');
                     cell.onclick = () => {
                         const ev = eventDatesMap[day][0];
-                        openNewsModal(ev.title, ev.fullDesc);
+                        openNewsModal(ev.title, ev.fullDesc, ev.mapLink);
                     };
                 }
 
@@ -2079,6 +2847,8 @@
             if (monthlyEventsCount === 0) {
                 eventsContainer.innerHTML = '<div class="card glass"><p>V tomto měsíci nejsou naplánované žádné akce.</p></div>';
             }
+
+            updateCalendarCountdown();
         }
 
         function changeMonth(direction) {
@@ -2097,6 +2867,7 @@
                 initTeacherState();
                 renderNewsList();
                 renderSongs();
+                renderRhythms();
             } else {
                 status.style.color = '#ff3b30';
                 status.innerText = 'Špatné heslo';
@@ -2110,12 +2881,14 @@
             initTeacherState();
             renderNewsList();
             renderSongs();
+            renderRhythms();
         }
 
         function initTeacherState() {
             const isTeacher = localStorage.getItem('sbor_is_teacher') === 'true';
             document.getElementById('btn-add-news-trigger').style.display = isTeacher ? 'flex' : 'none';
             document.getElementById('btn-add-song-trigger').style.display = isTeacher ? 'flex' : 'none';
+            document.getElementById('btn-add-rhythm-trigger').style.display = isTeacher ? 'flex' : 'none';
             document.getElementById('teacher-options-wrapper').style.display = isTeacher ? 'block' : 'none';
             document.getElementById('teacher-login-box').style.display = isTeacher ? 'none' : 'block';
             
@@ -2127,22 +2900,28 @@
         function initSettingsToggles() {
             const notifSetting = localStorage.getItem('sbor_notif_enabled') !== 'false';
             const calSetting = localStorage.getItem('sbor_cal_enabled') !== 'false';
+            const practiceSetting = localStorage.getItem('sbor_practice_enabled') !== 'false';
 
             document.getElementById('settings-notifications-toggle').checked = notifSetting;
             document.getElementById('settings-calendar-toggle').checked = calSetting;
+            document.getElementById('settings-practice-toggle').checked = practiceSetting;
 
             updateCalendarVisibility(calSetting);
+            updatePracticeVisibility(practiceSetting);
         }
 
         function toggleSetting(type, checkbox) {
             if (type === 'notifications') {
                 localStorage.setItem('sbor_notif_enabled', checkbox.checked ? 'true' : 'false');
-                if (checkbox.checked && 'Notification' in window) {
-                    Notification.requestPermission();
+                if (checkbox.checked) {
+                    registerPushNotifications();
                 }
             } else if (type === 'calendar') {
                 localStorage.setItem('sbor_cal_enabled', checkbox.checked ? 'true' : 'false');
                 updateCalendarVisibility(checkbox.checked);
+            } else if (type === 'practice') {
+                localStorage.setItem('sbor_practice_enabled', checkbox.checked ? 'true' : 'false');
+                updatePracticeVisibility(checkbox.checked);
             }
         }
 
@@ -2151,37 +2930,99 @@
             if (calNavBtn) {
                 calNavBtn.style.display = show ? 'flex' : 'none';
             }
+            if (!show && document.getElementById('tab-kalendar').classList.contains('active')) {
+                document.getElementById('nav-btn-news').click();
+            }
         }
 
+        function updatePracticeVisibility(show) {
+            const pracNavBtn = document.getElementById('nav-btn-practice');
+            if (pracNavBtn) {
+                pracNavBtn.style.display = show ? 'flex' : 'none';
+            }
+            if (!show && document.getElementById('tab-cviceni').classList.contains('active')) {
+                document.getElementById('nav-btn-news').click();
+            }
+        }
+
+        // === EDITOR AKTUALIT (BEZPEČNÝ PRO TLAČÍTKA I GOOGLE MAPY) ===
         function openEditorModalForNew() {
             document.getElementById('editor-modal-title').innerText = 'Přidat novou aktualitu';
             document.getElementById('ai-surovy-vstup').value = '';
             document.getElementById('editor-editing-id').value = '';
             document.getElementById('editor-tag').value = 'AKTUALITA';
             document.getElementById('editor-date').value = '';
-            document.getElementById('editor-map').value = ''; // <-- TOTO TADY PŘIDEJ!
+            document.getElementById('editor-map').value = '';
             document.getElementById('editor-title').value = '';
             document.getElementById('editor-short').value = '';
             document.getElementById('editor-full').value = '';
             document.getElementById('editor-modal').classList.add('active');
         }
 
-        function openEditorModalForEdit(id, tag, eventDate, title, shortDesc, fullDesc, event) {
-            event.stopPropagation();
+        function openEditorModalForEditById(id, event) {
+            if (event) event.stopPropagation();
+            const item = globalNewsList.find(n => n.id === id);
+            if (!item) return;
+
             document.getElementById('editor-modal-title').innerText = 'Upravit aktualitu';
             document.getElementById('ai-surovy-vstup').value = '';
-            document.getElementById('editor-editing-id').value = id;
-            document.getElementById('editor-tag').value = decodeURIComponent(tag);
-            document.getElementById('editor-date').value = decodeURIComponent(eventDate);
-            document.getElementById('editor-title').value = decodeURIComponent(title);
-            document.getElementById('editor-short').value = decodeURIComponent(shortDesc);
-            document.getElementById('editor-full').value = decodeURIComponent(fullDesc);
+            document.getElementById('editor-editing-id').value = item.id;
+            document.getElementById('editor-tag').value = item.tag || 'AKTUALITA';
+            document.getElementById('editor-date').value = item.eventDate || '';
+            document.getElementById('editor-map').value = item.mapLink || '';
+            document.getElementById('editor-title').value = item.title || '';
+            document.getElementById('editor-short').value = item.shortDesc || '';
+            document.getElementById('editor-full').value = item.fullDesc || '';
             document.getElementById('editor-modal').classList.add('active');
-            document.getElementById('editor-map').value = decodeURIComponent(mapLink || '');
         }
 
         function closeEditorModal() {
             document.getElementById('editor-modal').classList.remove('active');
+        }
+
+        function openInsertSongLinkModal() {
+            const select = document.getElementById('insert-song-select');
+            select.innerHTML = '';
+
+            if (globalSongsList.length === 0) {
+                showAppAlert('V aplikaci zatím nejsou nahrané žádné písničky.');
+                return;
+            }
+
+            globalSongsList.forEach(song => {
+                const opt = document.createElement('option');
+                opt.value = song.title;
+                opt.innerText = song.title;
+                select.appendChild(opt);
+            });
+
+            onInsertSongSelectChange();
+            document.getElementById('insert-song-link-modal').classList.add('active');
+        }
+
+        function onInsertSongSelectChange() {
+            const songTitle = document.getElementById('insert-song-select').value;
+            document.getElementById('insert-song-btn-label').value = `Pustit: ${songTitle}`;
+        }
+
+        function closeInsertSongLinkModal() {
+            document.getElementById('insert-song-link-modal').classList.remove('active');
+        }
+
+        function confirmInsertSongLink() {
+            const songTitle = document.getElementById('insert-song-select').value;
+            const btnLabel = document.getElementById('insert-song-btn-label').value.trim() || `Pustit: ${songTitle}`;
+            const safeSongAttr = songTitle.replace(/"/g, '&quot;');
+
+            const textarea = document.getElementById('editor-full');
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            const text = textarea.value;
+
+            const btnHTML = `<button type="button" class="song-link-btn-inline" data-song-title="${safeSongAttr}" onclick="openSongByName(this.getAttribute('data-song-title'))">${btnLabel}</button>`;
+            textarea.value = text.substring(0, start) + btnHTML + text.substring(end);
+            closeInsertSongLinkModal();
+            textarea.focus();
         }
 
         function insertFormat(type, value = '') {
@@ -2225,12 +3066,10 @@
             const title = document.getElementById('editor-title').value.trim();
             const shortDesc = document.getElementById('editor-short').value.trim();
             const fullDesc = document.getElementById('editor-full').value.trim();
-            
-            // --> TADY PŘIDEJ TENTO ŘÁDEK:
             const mapLink = document.getElementById('editor-map').value.trim();
 
             if (!title || !shortDesc || !fullDesc) {
-                alert('Vyplň prosím povinná pole!');
+                showAppAlert('Vyplň prosím nadpis, stručný popis a detailní popis aktuality!');
                 return;
             }
 
@@ -2240,7 +3079,7 @@
                 title: title,
                 shortDesc: shortDesc,
                 fullDesc: fullDesc,
-                mapLink: mapLink, // <-- A TADY PŘIDEJ MAPLINK DO BALÍČKU
+                mapLink: mapLink,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             };
 
@@ -2254,50 +3093,72 @@
 
             promise.then(() => {
                 closeEditorModal();
-            }).catch(err => alert('Chyba uložení: ' + err));
+            }).catch(err => showAppAlert(translateErrorToCzech(err), 'Chyba uložení aktuality'));
         }
 
         function deleteNews(newsId, event) {
             event.stopPropagation();
-            if (confirm('Opravdu chceš tuto aktualitu smazat pro všechny?')) {
-                db.collection("news").doc(newsId).delete();
-            }
+            showAppConfirm('Opravdu chceš tuto aktualitu smazat pro všechny členy sboru?', () => {
+                db.collection("news").doc(newsId).delete().catch(err => {
+                    showAppAlert(translateErrorToCzech(err), 'Chyba mazání');
+                });
+            }, 'Smazat aktualitu');
         }
 
-            function openNewsModal(title, textHTML, mapLink) {
-        // 1. Tady už máš někde připravený nadpis a text
-        document.getElementById('modal-news-title').innerText = title;
-        
-        // --- TADY VLOŽÍŠ TEN MŮJ KÓD PRO MAPU ---
-        let finalContent = textHTML;
-        if (mapLink) {
-            let embedSrc = mapLink;
-            if (!mapLink.includes('iframe') && mapLink.includes('google.com/maps')) {
-                embedSrc = `https://maps.google.com/maps?q=${encodeURIComponent(mapLink)}&output=embed`;
-            }
-            
-            if (mapLink.includes('<iframe')) {
-                finalContent += `<div style="margin-top:15px; border-radius:16px; overflow:hidden; border:1px solid var(--card-border);">${mapLink}</div>`;
-            } else {
-                finalContent += `<div style="margin-top:15px; border-radius:16px; overflow:hidden; border:1px solid var(--card-border); height:250px;"><iframe src="${embedSrc}" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe></div>`;
-            }
-        }
-        // ---------------------------------------
+        function buildGoogleMapEmbedHTML(rawMapInput) {
+            if (!rawMapInput) return '';
+            const trimmed = rawMapInput.trim();
+            if (!trimmed) return '';
 
-        // 2. A tady se to celé pošle do okna (zde použijeme 'finalContent' místo 'textHTML')
-        document.getElementById('modal-news-text').innerHTML = finalContent;
-        document.getElementById('news-modal').classList.add('active');
-    }
+            if (trimmed.includes('<iframe')) {
+                return `<div style="margin-top:15px; border-radius:16px; overflow:hidden; border:1px solid var(--card-border);">${trimmed}</div>`;
+            }
+
+            let queryParam = trimmed;
+            if (trimmed.includes('google.com/maps') || trimmed.includes('maps.app.goo.gl')) {
+                const qMatch = trimmed.match(/[?&]q=([^&]+)/);
+                const placeMatch = trimmed.match(/\/maps\/place\/([^/@?]+)/);
+                if (qMatch) {
+                    queryParam = decodeURIComponent(qMatch[1].replace(/\+/g, ' '));
+                } else if (placeMatch) {
+                    queryParam = decodeURIComponent(placeMatch[1].replace(/\+/g, ' '));
+                }
+            }
+
+            const embedSrc = `https://maps.google.com/maps?q=${encodeURIComponent(queryParam)}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+            const externalUrl = trimmed.startsWith('http') ? trimmed : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(queryParam)}`;
+
+            return `
+                <div style="margin-top:15px; border-radius:16px; overflow:hidden; border:1px solid var(--card-border); height:240px;">
+                    <iframe src="${embedSrc}" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                </div>
+                <a href="${externalUrl}" target="_blank" class="open-btn" style="margin-top:8px; padding:11px; font-size:0.85rem;">Otevřít v aplikaci Mapy</a>
+            `;
+        }
+
+        function openNewsModal(title, textHTML, mapLink) {
+            document.getElementById('modal-news-title').innerText = title;
+            let finalContent = textHTML || '';
+            if (mapLink) {
+                finalContent += buildGoogleMapEmbedHTML(mapLink);
+            }
+            document.getElementById('modal-news-text').innerHTML = finalContent;
+            document.getElementById('news-modal').classList.add('active');
+        }
+
         function closeNewsModal() {
             document.getElementById('news-modal').classList.remove('active');
         }
 
         function switchTab(tabId, event) {
             stopAudio();
+            stopMetronome();
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            }
         }
 
         function switchModalSection(sectionId, event) {
@@ -2320,8 +3181,8 @@
 
         function saveWelcomeData() {
             const name = document.getElementById('input-name').value.trim();
-            if (!name) { alert('Zadej jméno!'); return; }
-            if (!selectedVoiceGroup) { alert('Vyber hlas!'); return; }
+            if (!name) { showAppAlert('Zadej prosím své jméno!'); return; }
+            if (!selectedVoiceGroup) { showAppAlert('Vyber prosím svou hlasovou skupinu!'); return; }
 
             localStorage.setItem('sbor_user_name', name);
             localStorage.setItem('sbor_user_voice', selectedVoiceGroup);
@@ -2339,6 +3200,24 @@
 
         function toggleTeacherMode(checkbox) {
             localStorage.setItem('sbor_teacher_mode', checkbox.checked ? 'true' : 'false');
+        }
+
+        // === RYCHLOST PŘEHRÁVÁNÍ AUDIA (PO 0.05 NEBO ČÍSLO DO RÁMEČKU) ===
+        function toggleSpeedPopover() {
+            document.getElementById('speed-popover-panel').classList.toggle('open');
+        }
+
+        function setAudioPlaybackRate(val) {
+            let num = parseFloat(val);
+            if (isNaN(num)) num = 1.0;
+            num = Math.min(1.5, Math.max(0.5, Math.round(num * 20) / 20));
+            currentPlaybackSpeed = num;
+            audioObject.playbackRate = num;
+
+            const formatted = num.toFixed(2);
+            document.getElementById('btn-speed-toggle').innerText = `${formatted}x`;
+            document.getElementById('audio-speed-slider').value = formatted;
+            document.getElementById('audio-speed-number').value = formatted;
         }
 
         function createPlayerHTML(title, src) {
@@ -2366,10 +3245,20 @@
             stopAudio();
             currentOpenedSongId = song.id;
             updateModalMasteryButtons(song.id);
+            setAudioPlaybackRate(1.0);
+            document.getElementById('speed-popover-panel').classList.remove('open');
 
             document.getElementById('modal-song-title').innerText = song.title;
             document.getElementById('modal-download-btn').href = song.pdf || '#';
             document.getElementById('modal-open-btn').href = song.pdf || '#';
+
+            const noteBox = document.getElementById('modal-song-teacher-note');
+            if (song.note && song.note.trim()) {
+                noteBox.style.display = 'block';
+                noteBox.innerHTML = `<b>📌 Poznámka od učitele:</b><br>${song.note.replace(/\n/g, '<br>')}`;
+            } else {
+                noteBox.style.display = 'none';
+            }
 
             document.querySelectorAll('.modal-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.modal-nav-item').forEach(btn => btn.classList.remove('active'));
@@ -2402,7 +3291,7 @@
 
             const accWrapper = document.getElementById('modal-accompaniment-wrapper');
             const accContainer = document.getElementById('modal-accompaniment-container');
-            if (song.accompaniments) {
+            if (song.accompaniments && Object.keys(song.accompaniments).length > 0) {
                 accContainer.innerHTML = '';
                 for (let [name, src] of Object.entries(song.accompaniments)) {
                     accContainer.innerHTML += createPlayerHTML(name, src);
@@ -2414,16 +3303,17 @@
 
             document.getElementById('song-modal').classList.add('active');
         }
+
         function openSongByName(songName) {
+            if (!songName) return;
             const song = globalSongsList.find(s => s.title.toLowerCase().includes(songName.toLowerCase()));
             if (song) {
-                closeNewsModal(); // Zavře okno aktuality
-                openSongModal(song); // Otevře okno písničky
+                closeNewsModal();
+                openSongModal(song);
             } else {
-                alert('Písnička nebyla v seznamu nalezena.');
+                showAppAlert('Tato písnička zatím není v seznamu skladeb.');
             }
         }
-
 
         function closeSongModal() {
             stopAudio();
@@ -2450,22 +3340,25 @@
 
             const playableSrc = await getPlayableUrl(src);
             audioObject.src = playableSrc;
+            audioObject.playbackRate = currentPlaybackSpeed;
 
             audioObject.onloadedmetadata = () => {
                 scrubber.max = audioObject.duration;
                 timeTotal.innerText = formatTime(audioObject.duration);
+                audioObject.playbackRate = currentPlaybackSpeed;
             };
 
             audioObject.play().then(() => {
+                audioObject.playbackRate = currentPlaybackSpeed;
                 playSvg.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
                 updateInterval = setInterval(() => {
                     if (!audioObject.paused) {
                         scrubber.value = audioObject.currentTime;
                         timeCurrent.innerText = formatTime(audioObject.currentTime);
                     }
-                }, 250);
-            }).catch(() => {
-                alert('Nahrávku se nepodařilo spustit.');
+                }, 200);
+            }).catch(err => {
+                showAppAlert(translateErrorToCzech(err), 'Chyba přehrávání');
             });
 
             audioObject.onended = () => {
@@ -2503,6 +3396,342 @@
                 }
                 currentPlayingPlayer = null;
             }
+        }
+
+        // === CVIČENÍ: KLAVÍR, LADIČKA TÓNŮ A CHYTRÝ METRONOM ===
+        let practiceAudioCtx = null;
+        function getPracticeAudioContext() {
+            if (!practiceAudioCtx) {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                practiceAudioCtx = new AudioCtx();
+            }
+            if (practiceAudioCtx.state === 'suspended') {
+                practiceAudioCtx.resume();
+            }
+            return practiceAudioCtx;
+        }
+
+        const PIANO_NOTES = [
+            { name: 'C4', freq: 261.63, black: false },
+            { name: 'C#4', freq: 277.18, black: true, pos: 24 },
+            { name: 'D4', freq: 293.66, black: false },
+            { name: 'D#4', freq: 311.13, black: true, pos: 60 },
+            { name: 'E4', freq: 329.63, black: false },
+            { name: 'F4', freq: 349.23, black: false },
+            { name: 'F#4', freq: 369.99, black: true, pos: 132 },
+            { name: 'G4', freq: 392.00, black: false },
+            { name: 'G#4', freq: 415.30, black: true, pos: 168 },
+            { name: 'A4', freq: 440.00, black: false },
+            { name: 'B4', freq: 466.16, black: true, pos: 204 },
+            { name: 'H4', freq: 493.88, black: false },
+            { name: 'C5', freq: 523.25, black: false }
+        ];
+
+        function initPianoKeyboard() {
+            const container = document.getElementById('piano-keyboard-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const row = document.createElement('div');
+            row.className = 'piano-black-row';
+
+            PIANO_NOTES.forEach(n => {
+                const keyEl = document.createElement('div');
+                if (n.black) {
+                    keyEl.className = 'piano-key-black';
+                    keyEl.style.left = `${n.pos}px`;
+                    keyEl.innerText = n.name;
+                } else {
+                    keyEl.className = 'piano-key-white';
+                    keyEl.innerText = n.name;
+                }
+                keyEl.onclick = () => playFrequencyTone(n.freq, n.name, keyEl);
+                row.appendChild(keyEl);
+            });
+
+            container.appendChild(row);
+        }
+
+        function playFrequencyTone(freq, label, keyEl = null) {
+            try {
+                const ctx = getPracticeAudioContext();
+                const osc = ctx.createOscillator();
+                const osc2 = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'triangle';
+                osc2.type = 'sine';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime);
+                osc2.frequency.setValueAtTime(freq * 2, ctx.currentTime);
+
+                const subGain = ctx.createGain();
+                subGain.gain.setValueAtTime(0.18, ctx.currentTime);
+                osc2.connect(subGain);
+
+                gain.gain.setValueAtTime(0.001, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.45, ctx.currentTime + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.0008, ctx.currentTime + 1.4);
+
+                osc.connect(gain);
+                subGain.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start();
+                osc2.start();
+                osc.stop(ctx.currentTime + 1.45);
+                osc2.stop(ctx.currentTime + 1.45);
+
+                document.getElementById('tuner-active-display').innerText = `Zní tón: ${label} (${Math.round(freq)} Hz)`;
+                if (keyEl) {
+                    keyEl.classList.add('active-note');
+                    setTimeout(() => keyEl.classList.remove('active-note'), 350);
+                }
+            } catch (e) {}
+        }
+
+        function parseNoteNameToFreq(raw) {
+            if (!raw) return null;
+            let cleaned = raw.trim().toUpperCase()
+                .replace('FIS', 'F#')
+                .replace('CIS', 'C#')
+                .replace('DIS', 'D#')
+                .replace('GIS', 'G#')
+                .replace('AIS', 'A#')
+                .replace('HB', 'BB')
+                .replace('HES', 'BB')
+                .replace('ES', 'EB')
+                .replace('AS', 'AB');
+
+            const match = cleaned.match(/^([A-H])([#B]?)(-?\d?)$/);
+            if (!match) return null;
+
+            let letter = match[1];
+            const accidental = match[2];
+            const octave = match[3] ? parseInt(match[3], 10) : 4;
+
+            if (letter === 'H') letter = 'B';
+            else if (letter === 'B' && accidental === '') letter = 'BB';
+
+            const semitoneMap = {
+                'C': -9, 'C#': -8, 'DB': -8,
+                'D': -7, 'D#': -6, 'EB': -6,
+                'E': -5,
+                'F': -4, 'F#': -3, 'GB': -3,
+                'G': -2, 'G#': -1, 'AB': -1,
+                'A': 0,  'A#': 1,  'BB': 1,
+                'B': 2
+            };
+
+            const key = letter + (letter === 'BB' ? '' : accidental);
+            if (!(key in semitoneMap)) return null;
+
+            const nFromA4 = semitoneMap[key] + (octave - 4) * 12;
+            return 440 * Math.pow(2, nFromA4 / 12);
+        }
+
+        function playTypedNote() {
+            const val = document.getElementById('tuner-note-input').value.trim();
+            if (!val) {
+                showAppAlert('Napiš prosím název tónu, například C4, A4 nebo F#4.');
+                return;
+            }
+            const freq = parseNoteNameToFreq(val);
+            if (!freq || freq < 60 || freq > 2500) {
+                showAppAlert('Tenhle tón jsem nerozpoznal. Zkus zápis jako C4, D4, E4, F#4, G4, A4 nebo H4.');
+                return;
+            }
+            playFrequencyTone(freq, val.toUpperCase());
+        }
+
+        // Chytrý metronom a vlastní rytmy (bez semaforu)
+        let metroRunning = false;
+        let metroBpm = 100;
+        let metroBeats = 4;
+        let metroCurrentBeat = 0;
+        let metroTimerId = null;
+        let tapTimestamps = [];
+
+        const DEFAULT_RHYTHMS = [
+            { id: 'def_4_4', name: 'Rovný 4/4', beats: 4, bpm: 100, isDefault: true },
+            { id: 'def_3_4', name: 'Valčíkový 3/4', beats: 3, bpm: 112, isDefault: true },
+            { id: 'def_2_4', name: 'Pochod 2/4', beats: 2, bpm: 120, isDefault: true },
+            { id: 'def_6_8', name: 'Houpavý 6/8', beats: 6, bpm: 132, isDefault: true }
+        ];
+
+        function listenToRhythms() {
+            db.collection('practice_rhythms').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
+                const custom = [];
+                snapshot.forEach(doc => {
+                    const d = doc.data();
+                    custom.push({
+                        id: doc.id,
+                        name: d.name || 'Rytmus',
+                        beats: d.beats || 4,
+                        bpm: d.bpm || 100,
+                        isDefault: false
+                    });
+                });
+                globalRhythmsList = [...DEFAULT_RHYTHMS, ...custom];
+                renderRhythms();
+            }, () => {
+                globalRhythmsList = [...DEFAULT_RHYTHMS];
+                renderRhythms();
+            });
+        }
+
+        function renderRhythms() {
+            const container = document.getElementById('rhythm-list-container');
+            if (!container) return;
+            container.innerHTML = '';
+            const isTeacher = localStorage.getItem('sbor_is_teacher') === 'true';
+
+            globalRhythmsList.forEach(r => {
+                const chip = document.createElement('div');
+                chip.className = 'rhythm-chip' + (r.beats === metroBeats && r.bpm === metroBpm ? ' active' : '');
+                const delBtn = (!r.isDefault && isTeacher)
+                    ? `<span onclick="deleteRhythm('${r.id}', event)" style="color:#ff3b30; padding:0 4px;" title="Smazat rytmus">✕</span>`
+                    : '';
+                chip.innerHTML = `
+                    <span>${r.name} (${r.beats}/4)</span>
+                    ${delBtn}
+                `;
+                chip.onclick = () => selectRhythmPreset(r);
+                container.appendChild(chip);
+            });
+        }
+
+        function selectRhythmPreset(rhythm) {
+            metroBeats = rhythm.beats;
+            setMetroBpm(rhythm.bpm);
+            rebuildMetroDots();
+            renderRhythms();
+            if (!metroRunning) {
+                toggleMetronome();
+            }
+        }
+
+        function rebuildMetroDots() {
+            const row = document.getElementById('metro-beats-visual');
+            row.innerHTML = '';
+            for (let i = 0; i < metroBeats; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'metro-dot' + (i === 0 ? ' accent' : '');
+                row.appendChild(dot);
+            }
+        }
+
+        function setMetroBpm(val) {
+            metroBpm = Math.min(220, Math.max(40, parseInt(val, 10) || 100));
+            document.getElementById('metro-bpm-label').innerText = metroBpm;
+            document.getElementById('metro-bpm-slider').value = metroBpm;
+            if (metroRunning) {
+                clearInterval(metroTimerId);
+                metroTimerId = setInterval(tickMetronome, (60 / metroBpm) * 1000);
+            }
+        }
+
+        function adjustMetroBpm(delta) {
+            setMetroBpm(metroBpm + delta);
+        }
+
+        function tapMetroTempo() {
+            const now = Date.now();
+            tapTimestamps.push(now);
+            if (tapTimestamps.length > 4) tapTimestamps.shift();
+            if (tapTimestamps.length >= 2) {
+                let sum = 0;
+                for (let i = 1; i < tapTimestamps.length; i++) {
+                    sum += tapTimestamps[i] - tapTimestamps[i - 1];
+                }
+                const avgMs = sum / (tapTimestamps.length - 1);
+                if (avgMs > 250 && avgMs < 2000) {
+                    setMetroBpm(Math.round(60000 / avgMs));
+                }
+            }
+        }
+
+        function tickMetronome() {
+            const dots = document.querySelectorAll('#metro-beats-visual .metro-dot');
+            dots.forEach((d, idx) => d.classList.toggle('lit', idx === metroCurrentBeat));
+
+            try {
+                const ctx = getPracticeAudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(metroCurrentBeat === 0 ? 1050 : 750, ctx.currentTime);
+                gain.gain.setValueAtTime(0.35, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.08);
+            } catch (e) {}
+
+            metroCurrentBeat = (metroCurrentBeat + 1) % metroBeats;
+        }
+
+        function toggleMetronome() {
+            const btn = document.getElementById('btn-metro-toggle');
+            if (metroRunning) {
+                stopMetronome();
+            } else {
+                metroRunning = true;
+                metroCurrentBeat = 0;
+                btn.innerText = 'Zastavit metronom';
+                tickMetronome();
+                metroTimerId = setInterval(tickMetronome, (60 / metroBpm) * 1000);
+            }
+        }
+
+        function stopMetronome() {
+            metroRunning = false;
+            clearInterval(metroTimerId);
+            const btn = document.getElementById('btn-metro-toggle');
+            if (btn) btn.innerText = 'Spustit metronom';
+            document.querySelectorAll('#metro-beats-visual .metro-dot').forEach(d => d.classList.remove('lit'));
+        }
+
+        function openRhythmEditorModal() {
+            document.getElementById('rhythm-input-name').value = '';
+            document.getElementById('rhythm-input-beats').value = '4';
+            document.getElementById('rhythm-input-bpm').value = '100';
+            document.getElementById('rhythm-editor-modal').classList.add('active');
+        }
+
+        function closeRhythmEditorModal() {
+            document.getElementById('rhythm-editor-modal').classList.remove('active');
+        }
+
+        function saveNewRhythm() {
+            const name = document.getElementById('rhythm-input-name').value.trim();
+            const beats = Math.min(8, Math.max(2, parseInt(document.getElementById('rhythm-input-beats').value, 10) || 4));
+            const bpm = Math.min(220, Math.max(40, parseInt(document.getElementById('rhythm-input-bpm').value, 10) || 100));
+
+            if (!name) {
+                showAppAlert('Zadej prosím název rytmu.');
+                return;
+            }
+
+            db.collection('practice_rhythms').add({
+                name: name,
+                beats: beats,
+                bpm: bpm,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            }).then(() => {
+                closeRhythmEditorModal();
+            }).catch(err => {
+                showAppAlert(translateErrorToCzech(err), 'Chyba přidání rytmu');
+            });
+        }
+
+        function deleteRhythm(rhythmId, event) {
+            event.stopPropagation();
+            showAppConfirm('Opravdu chceš tento rytmus smazat?', () => {
+                db.collection('practice_rhythms').doc(rhythmId).delete().catch(err => {
+                    showAppAlert(translateErrorToCzech(err), 'Chyba mazání');
+                });
+            }, 'Smazat rytmus');
         }
 
         function initTheme() {
@@ -2544,32 +3773,18 @@
                     }
                 }
             }).then(() => {
-                alert('Aplikace byla zkontrolována a aktualizována na nejnovější verzi!');
-                window.location.reload(true);
+                showAppAlert('Aplikace byla aktualizována na nejnovější verzi! Stránka se nyní znovu načte.', 'Aktualizace');
+                setTimeout(() => window.location.reload(true), 1200);
             });
         }
-        function toggleSetting(type, checkbox) {
-            if (type === 'notifications') {
-                localStorage.setItem('sbor_notif_enabled', checkbox.checked ? 'true' : 'false');
-                if (checkbox.checked) {
-                    registerPushNotifications(); // <-- Tady se spouští vyžádání tokenu
-                }
-            } else if (type === 'calendar') {
-                localStorage.setItem('sbor_cal_enabled', checkbox.checked ? 'true' : 'false');
-                updateCalendarVisibility(checkbox.checked);
-            }
-        }
-        const messaging = firebase.messaging();
-        const VAPID_KEY = "BMmDJrrFng4Ajjz6y0_gM03YfvgYc-dq87PXufyyMecMA5J-MjzVXE0T-Osnk-AToh5tEAdppByFdNScGSKvNcI "; // Sem vlož svůj klíč z Firebase konzole
 
         async function registerPushNotifications() {
             if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
 
-            // Podmínka pro iOS (Apple) – aplikace musí být přidaná na plochu
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
             if (isIOS && !isStandalone) {
-                alert('Na iPhonu/iPadu přidej nejprve aplikaci na plochu (Sdílet -> Přidat na plochu), aby fungovaly notifikace!');
+                showAppAlert('Na iPhonu nebo iPadu přidej nejprve aplikaci na plochu (Sdílet -> Přidat na plochu), aby fungovala upozornění!', 'Upozornění na Apple');
                 return;
             }
 
@@ -2583,7 +3798,6 @@
                     });
 
                     if (token) {
-                        // Uložení tokenu do Firestore databáze
                         await db.collection('fcm_tokens').doc(token).set({
                             token: token,
                             voice: localStorage.getItem('sbor_user_voice') || 'Neznámý',
@@ -2591,30 +3805,30 @@
                         });
                     }
                 } catch (err) {
-                    console.error('Chyba tokenu:', err);
+                    showAppAlert(translateErrorToCzech(err), 'Upozornění');
                 }
             } else {
                 const toggle = document.getElementById('settings-notifications-toggle');
                 if (toggle) toggle.checked = false;
             }
         }
+
         function handleEditorPaste(event) {
             const items = (event.clipboardData || event.originalEvent.clipboardData).items;
             for (let index in items) {
                 const item = items[index];
                 if (item.kind === 'file' && item.type.includes('image')) {
-                    event.preventDefault(); // Zastaví výchozí vložení
+                    event.preventDefault();
                     const blob = item.getAsFile();
                     const reader = new FileReader();
                     
-                    reader.onload = function(event) {
-                        const base64Img = event.target.result;
+                    reader.onload = function(ev) {
+                        const base64Img = ev.target.result;
                         const textarea = document.getElementById('editor-full');
                         const cursorPos = textarea.selectionStart;
                         const textBefore = textarea.value.substring(0, cursorPos);
                         const textAfter = textarea.value.substring(cursorPos);
                         
-                        // Vloží HTML značku pro obrázek přímo na pozici kurzoru
                         const imageHTML = `<br><img src="${base64Img}" style="max-width:100%; border-radius:12px; margin:10px 0;"/><br>`;
                         textarea.value = textBefore + imageHTML + textAfter;
                     };
@@ -2624,6 +3838,12 @@
                 }
             }
         }
+        const textarea = document.querySelector('#detailInput'); // Zadej správný selektor tvého pole
+
+    textarea.addEventListener('input', function() {
+        this.style.height = 'auto'; // Resetuje výšku, aby se mohla zmenšit, když uživatel text smaže
+        this.style.height = (this.scrollHeight) + 'px'; // Nastaví výšku podle aktuálního množství textu
+    });
     </script>
 </body>
 </html>
