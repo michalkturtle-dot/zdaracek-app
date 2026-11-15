@@ -1329,6 +1329,45 @@
             from { opacity: 0; transform: translateY(50px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        .social-links-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .social-icon-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--input-bg);
+            border: 1px solid var(--card-border);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.2s ease, color 0.2s ease;
+        }
+
+        body.dark-mode .social-icon-btn {
+            color: #ff85a6;
+        }
+
+        .social-icon-btn:hover {
+            transform: translateY(-3px) scale(1.08);
+            background: var(--primary);
+            color: white;
+        }
+
+        body.dark-mode .social-icon-btn:hover {
+            background: #ff85a6;
+            color: #18090c;
+        }
     </style>
 </head>
 <body>
@@ -1438,6 +1477,33 @@
 
             <div class="grid" id="news-grid-container">
                 <!-- Zde se načítají novinky -->
+            </div>
+            <!-- Odkazy na sociální sítě a galerie -->
+            <div class="social-links-container">
+                <!-- Zonerama -->
+                <a href="https://eu.zonerama.com/zdaracek/1514101" target="_blank" class="social-icon-btn" title="Zonerama galerie">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                </a>
+                <!-- YouTube -->
+                <a href="https://www.youtube.com/@zdaracek" target="_blank" class="social-icon-btn" title="YouTube">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.95-1.96C18.88 4 12 4 12 4s-6.88 0-8.59.46a2.78 2.78 0 0 0-1.95 1.96A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.95 1.96C5.12 20 12 20 12 20s6.88 0 8.59-.46a2.78 2.78 0 0 0 1.95-1.96A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/><polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor"/></svg>
+                </a>
+                <!-- Facebook -->
+                <a href="https://www.facebook.com/dpszdaracek/?locale=cs_CZ" target="_blank" class="social-icon-btn" title="Facebook">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                </a>
+                <!-- Instagram -->
+                <a href="https://www.instagram.com/dpszdaracek/" target="_blank" class="social-icon-btn" title="Instagram">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                </a>
+                <!-- Spotify -->
+                <a href="https://open.spotify.com/artist/4CBoY7i0FATZuSswLmYDrz" target="_blank" class="social-icon-btn" title="Spotify">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M6.5 10.5c3.5-1 8-1 11 1"/><path d="M8 14c2.5-.7 6-.7 8.5.5"/><path d="M9.5 17.5c2-.5 4.5-.5 6 .5"/></svg>
+                </a>
+                <!-- Apple Music -->
+                <a href="https://music.apple.com/us/artist/%C5%BE%C4%8F%C3%A1r%C3%A1%C4%8Dek/6798247449" target="_blank" class="social-icon-btn" title="Apple Music">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                </a>
             </div>
         </div>
 
