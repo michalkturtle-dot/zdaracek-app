@@ -552,6 +552,12 @@
             animation: pulseEvent 2s infinite;
         }
 
+        /* Zvýraznění dneška v kalendáři (šedý design) */
+        .calendar-day.today-highlight {
+            border: 2px solid var(--text-muted) !important;
+            background: rgba(120, 120, 120, 0.15) !important;
+        }
+
         @keyframes pulseEvent {
             0% { box-shadow: 0 0 0 0 rgba(107, 29, 47, 0.4); }
             70% { box-shadow: 0 0 0 8px rgba(107, 29, 47, 0); }
@@ -829,15 +835,15 @@
             backdrop-filter: blur(25px) saturate(180%);
             -webkit-backdrop-filter: blur(25px) saturate(180%);
             width: 100%;
-            max-width: 600px;
+            max-width: 850px; /* Zvětšeno ze 600px na 850px pro mnohem širší prostor na PC */
             border-top-left-radius: 36px;
             border-top-right-radius: 36px;
             border: 1px solid var(--card-border);
-            padding: 30px 24px 110px;
+            padding: 30px 30px 110px;
             box-shadow: 0 -20px 50px rgba(0,0,0,0.35);
             animation: slideUpModal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
             position: relative;
-            max-height: 88vh;
+            max-height: 90vh;
             overflow-y: auto;
         }
 
@@ -1372,6 +1378,32 @@
             background: #ff85a6;
             color: #18090c;
         }
+        @media (max-width: 768px) {
+            /* Na mobilu skryjeme rozdělení vedle sebe a řešíme to záložkami */
+            #editor-split-container {
+                flex-direction: column !important;
+            }
+        }
+        @media (min-width: 769px) {
+            #editor-split-container {
+                display: flex !important;
+                flex-direction: row !important;
+            }
+            #editor-code-pane, #editor-preview-pane {
+                display: flex !important;
+                flex: 1 !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #editor-split-container {
+                flex-direction: column !important;
+            }
+            /* Na mobilu případně zapni záložkový bar, pokud ho chceš */
+            #editor-tabs-bar {
+                display: flex !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1472,6 +1504,11 @@
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                     Přidat aktualitu
                 </button>
+            </div>
+
+            <!-- Vodorovně posuvný filtr štítků s tlačítkem „Vše“ na začátku -->
+            <div style="overflow-x: auto; white-space: nowrap; margin-bottom: 14px; padding-bottom: 4px; display: flex; gap: 6px;" id="news-tags-filter-bar">
+                <button class="tool-btn active" onclick="filterNewsByTag('VŠECHNY', this)" style="border-radius: 20px; padding: 6px 14px;">Vše</button>
             </div>
 
             <div id="offline-status-banner" class="offline-sync-badge" style="display:none;">
@@ -1575,10 +1612,17 @@
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="toggle-row">
+                    <div class="toggle-row" style="margin-bottom: 10px;">
                         <span style="font-weight: 600; font-size: 0.9rem;">Karta Cvičení (ladička a rytmy)</span>
                         <label class="switch">
                             <input type="checkbox" id="settings-practice-toggle" onchange="toggleSetting('practice', this)" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-row">
+                        <span style="font-weight: 600; font-size: 0.9rem;">Haptická odezva (Vibrace)</span>
+                        <label class="switch">
+                            <input type="checkbox" id="settings-haptics-toggle" onchange="toggleSetting('haptics', this)" checked>
                             <span class="slider"></span>
                         </label>
                     </div>
@@ -1626,8 +1670,22 @@
         </div>
     </div>
 
+    <!-- Globální plovoucí Mini Přehrávač (zobrazen pouze při přehrávání) -->
+    <div id="global-mini-player" style="position: fixed; bottom: 6px; left: 15px; right: 15px; max-width: 570px; margin: 0 auto; background: var(--tab-bg); backdrop-filter: blur(25px) saturate(180%); -webkit-backdrop-filter: blur(25px) saturate(180%); border: 1px solid var(--tab-border); border-radius: 20px; padding: 12px 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1050; display: none; align-items: center; justify-content: space-between; gap: 12px; transition: transform 0.3s ease;">
+        <div style="display: flex; align-items: center; gap: 10px; overflow: hidden; flex: 1;">
+            <button class="btn-play-mini" style="width: 36px; height: 36px;" onclick="toggleGlobalMiniPlayPause()">
+                <svg id="global-mini-play-svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            </button>
+            <div style="overflow: hidden;">
+                <div id="global-mini-title" style="font-size: 0.85rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Název písně</div>
+                <div id="global-mini-time" style="font-size: 0.7rem; color: var(--text-muted);">0:00 / 0:00</div>
+            </div>
+        </div>
+        <button class="tool-btn" style="padding: 6px 12px;" onclick="stopAudio()">Zastavit</button>
+    </div>
+
     <!-- Hlavní spodní dock (Cvičení – Audio – Aktuality – Kalendář – Nastavení) -->
-    <div class="nav-dock-wrapper">
+    <div class="nav-dock-wrapper" id="main-nav-dock-wrapper">
         <div class="nav-dock">
             <button class="nav-item" id="nav-btn-practice" onclick="switchTab('cviceni', event)">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
@@ -1674,7 +1732,13 @@
             <input type="text" id="editor-tag" class="form-input" placeholder="Štítek..." value="AKTUALITA">
 
             <label style="font-size: 0.75rem; font-weight: 700;">Datum akce pro kalendář (Formát: DD.MM.YYYY)</label>
-            <input type="text" id="editor-date" class="form-input" placeholder="např. 15.12.2026">
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 14px;">
+                <input type="text" id="editor-date" class="form-input" style="margin:0; flex:1;" placeholder="např. 15.12.2026">
+                <!-- SVG ikona pro vyskakovací kalendář -->
+                <button type="button" class="tool-btn" style="padding: 12px; display: flex; align-items: center; justify-content: center;" onclick="openDatePickerModal()" title="Vybrat datum v kalendáři">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </button>
+            </div>
 
             <label style="font-size: 0.75rem; font-weight: 700;">Odkaz nebo adresa pro Google Mapy (volitelně)</label>
             <div style="display:flex; gap:6px; align-items:center; margin-top:8px; margin-bottom:14px;">
@@ -1688,32 +1752,64 @@
             <label style="font-size: 0.75rem; font-weight: 700;">Stručný popis na kartě</label>
             <input type="text" id="editor-short" class="form-input" placeholder="Stručný popis...">
 
-            <label style="font-size: 0.75rem; font-weight: 700;">Detailní popis</label>
-            
-            <div class="editor-toolbar">
+            <!-- Společná lišta s tlačítky pro formátování -->
+            <div class="editor-toolbar" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; margin-bottom: 10px;">
                 <button type="button" class="tool-btn" onclick="insertFormat('bold')"><b>B</b> Tučné</button>
                 <button type="button" class="tool-btn" onclick="insertFormat('underline')"><u>U</u> Podtržené</button>
                 <button type="button" class="tool-btn" onclick="insertFormat('bullet')">• Odrážka</button>
                 <button type="button" class="tool-btn" onclick="openInsertSongLinkModal()">🎵 Vložit tlačítko písně</button>
-                
-                <select id="tool-size" class="tool-btn" onchange="insertFormat('size', this.value)">
-                    <option value="">Velikost písma</option>
-                    <option value="small">Malé písmo</option>
-                    <option value="normal">Běžné písmo</option>
-                    <option value="large">Velké písmo</option>
-                </select>
-
-                <select id="tool-font" class="tool-btn" onchange="insertFormat('font', this.value)">
-                    <option value="">Styl písma</option>
-                    <option value="sans">Bez patky</option>
-                    <option value="serif">S patkou</option>
-                    <option value="monospace">Strojopis</option>
-                </select>
+                <button type="button" class="tool-btn" onclick="openInsertLinkModal()">🔗 Vložit odkaz</button>
+                <button type="button" class="tool-btn" onclick="openInsertYoutubeModal()">▶️ YouTube</button>
             </div>
 
-            <textarea id="editor-full" class="editor-textarea" placeholder="Detailní text aktuality..." onpaste="handleEditorPaste(event)"></textarea>
+            <!-- Hlavní kontejner: na PC vedle sebe, na mobilu pod sebe -->
+            <div id="editor-split-container" style="display: flex; gap: 16px; width: 100%; margin-top: 8px;">
+                
+                <!-- KÓD (Plně funkční textarea vlevo) -->
+                <div id="editor-code-pane" style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+                    <label style="font-size: 0.75rem; font-weight: 700; margin-bottom: 4px;">Surový HTML kód</label>
+                    <textarea id="editor-full-code" class="editor-textarea" style="width: 100%; height: 380px; resize: vertical;" placeholder="Sem piš HTML kód..."></textarea>
+                </div>
 
-            <button class="btn-submit" onclick="publishNews()">Uložit a publikovat</button>
+                <!-- NÁHLED (Pouze čtecí vizuální div vpravo) -->
+                <div id="editor-preview-pane" style="flex: 1; display: flex; flex-direction: column; min-width: 0;">
+                    <label style="font-size: 0.75rem; font-weight: 700; margin-bottom: 4px;">Vizuální náhled (pouze pro čtení)</label>
+                    <div id="editor-preview-render" style="width: 100%; height: 380px; padding: 14px 16px; border-radius: 16px; border: 1px solid var(--card-border); background: var(--input-bg); color: var(--text-main); font-size: 0.95rem; overflow-y: auto; white-space: pre-line; box-sizing: border-box;"></div>
+                </div>
+
+            </div>
+
+            <!-- Skryté pole pro uložení do databáze -->
+            <textarea id="editor-full" style="display:none;"></textarea>
+
+            <!-- Tlačítko pro uložení -->
+            <div style="margin-top: 20px; text-align: center;">
+                <button type="button" class="btn-submit" onclick="publishNews()">Uložit a publikovat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modální okno: Výběr data v kalendáři pro editor -->
+    <div id="date-picker-modal" class="modal-overlay center-dialog">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeDatePickerModal()" aria-label="Zavřít">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div class="calendar-header" style="margin-bottom: 10px;">
+                <button class="calendar-nav-btn" onclick="changePickerMonth(-1)">‹</button>
+                <h3 id="picker-month-title" style="font-size: 1.1rem; margin:0; padding:0;">Měsíc</h3>
+                <button class="calendar-nav-btn" onclick="changePickerMonth(1)">›</button>
+            </div>
+            <div class="calendar-grid">
+                <div class="calendar-weekday">PO</div>
+                <div class="calendar-weekday">ÚT</div>
+                <div class="calendar-weekday">ST</div>
+                <div class="calendar-weekday">ČT</div>
+                <div class="calendar-weekday">PÁ</div>
+                <div class="calendar-weekday">SO</div>
+                <div class="calendar-weekday">NE</div>
+            </div>
+            <div class="calendar-grid" id="picker-days-grid" style="margin-top: 6px;"></div>
         </div>
     </div>
 
@@ -1731,6 +1827,34 @@
             <input type="text" id="insert-song-btn-label" class="form-input" placeholder="Pustit: Název písně">
 
             <button class="btn-submit" onclick="confirmInsertSongLink()">Vložit tlačítko do textu</button>
+        </div>
+    </div>
+
+    <!-- Modální okno: Vložit vlastní odkaz -->
+    <div id="insert-link-modal" class="modal-overlay center-dialog">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeInsertLinkModal()" aria-label="Zavřít">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <h3 style="font-size: 1.15rem; margin-bottom: 12px; color: var(--primary);">Vložit odkaz</h3>
+            <label style="font-size: 0.75rem; font-weight: 700;">URL adresa</label>
+            <input type="text" id="insert-link-url" class="form-input" placeholder="https://...">
+            <label style="font-size: 0.75rem; font-weight: 700;">Text tlačítka</label>
+            <input type="text" id="insert-link-text" class="form-input" placeholder="Navštívit web...">
+            <button class="btn-submit" onclick="confirmInsertLink()">Vložit bordó tlačítko</button>
+        </div>
+    </div>
+
+    <!-- Modální okno: Vložit YouTube video -->
+    <div id="insert-youtube-modal" class="modal-overlay center-dialog">
+        <div class="modal-card">
+            <button class="modal-close" onclick="closeInsertYoutubeModal()" aria-label="Zavřít">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <h3 style="font-size: 1.15rem; margin-bottom: 12px; color: var(--primary);">Vložit YouTube video</h3>
+            <label style="font-size: 0.75rem; font-weight: 700;">Odkaz na YouTube video</label>
+            <input type="text" id="insert-youtube-url" class="form-input" placeholder="https://www.youtube.com/watch?v=...">
+            <button class="btn-submit" onclick="confirmInsertYoutube()">Vložit video přehrávač</button>
         </div>
     </div>
 
@@ -1816,6 +1940,16 @@
             <button class="modal-close" onclick="closeNewsModal()" aria-label="Zavřít">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
+            <div style="display: flex; gap: 8px; position: absolute; top: 20px; right: 65px;">
+                <!-- Tlačítko pro export do kalendáře (.ics) -->
+                <button class="btn-news-action" id="modal-calendar-export-btn" onclick="exportCurrentNewsToCalendar()" title="Přidat do osobního kalendáře">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                </button>
+                <!-- Tlačítko pro sdílení -->
+                <button class="btn-news-action" onclick="shareCurrentNews()" title="Sdílet aktualitu">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                </button>
+            </div>
             <h3 id="modal-news-title" style="font-size: 1.3rem; margin-bottom: 14px;">Titulek</h3>
             <div id="modal-news-text">Text aktuality...</div>
         </div>
@@ -1926,7 +2060,7 @@
     </div>
 
     <!-- Naše vlastní vyskakovací okno pro srozumitelné hlášky a potvrzení -->
-    <div id="custom-dialog-modal" class="modal-overlay center-dialog">
+    <div id="custom-dialog-modal" class="modal-overlay center-dialog" style="left: 0px; top: -1px;">
         <div class="modal-card">
             <h3 id="custom-dialog-title" style="font-size: 1.15rem; margin-bottom: 8px; color: var(--primary); padding-right:0;">Oznámení</h3>
             <p id="custom-dialog-message" style="font-size: 0.94rem; line-height: 1.55; margin-bottom: 18px;">Zpráva...</p>
@@ -1964,20 +2098,32 @@
         let selectedVoiceGroup = '';
         let audioObject = new Audio();
         let currentPlayingPlayer = null;
+        let currentPlayingSongTitle = '';
         let currentObjectUrl = null;
         let updateInterval = null;
         let currentPlaybackSpeed = 1.0;
 
         let currentCalendarDate = new Date();
+        let currentPickerDate = new Date();
         let globalNewsList = [];
         let globalSongsList = [];
         let globalMasteryStats = {};
         let globalRhythmsList = [];
         let currentOpenedSongId = null;
+        let currentSelectedNewsTag = 'VŠECHNY';
 
         let uploadedFiles = { pdf: null, sopran: null, alt: null, tenor: null, bas: null };
         let uploadedAccompanimentFiles = [];
         let existingAccompanimentsEdit = {};
+
+        // === HAPTICKÁ ODEZVA (VIBRACE) ===
+        function triggerHaptic(type = 'medium') {
+            const hapticsEnabled = localStorage.getItem('sbor_haptics_enabled') !== 'false';
+            if (!hapticsEnabled || !navigator.vibrate) return;
+            if (type === 'light') navigator.vibrate(15);
+            else if (type === 'medium') navigator.vibrate(35);
+            else if (type === 'heavy') navigator.vibrate([40, 30, 40]);
+        }
 
         // === SROZUMITELNÉ CHYBOVÉ HLÁŠKY A VLASTNÍ OKNA ===
         function translateErrorToCzech(err) {
@@ -2006,6 +2152,7 @@
         }
 
         function showAppAlert(message, title = 'Oznámení') {
+            triggerHaptic('light');
             document.getElementById('custom-dialog-title').innerText = title;
             document.getElementById('custom-dialog-message').innerText = message;
             document.getElementById('custom-dialog-buttons').innerHTML = `
@@ -2015,6 +2162,7 @@
         }
 
         function showAppConfirm(message, onConfirm, title = 'Potvrzení') {
+            triggerHaptic('medium');
             document.getElementById('custom-dialog-title').innerText = title;
             document.getElementById('custom-dialog-message').innerText = message;
             const btns = document.getElementById('custom-dialog-buttons');
@@ -2041,6 +2189,7 @@
         }
 
         function closeCustomDialog() {
+            triggerHaptic('light');
             document.getElementById('custom-dialog-modal').classList.remove('active');
         }
 
@@ -2113,6 +2262,7 @@
                 const cachedNews = localStorage.getItem('sbor_cache_news');
                 if (cachedNews) {
                     globalNewsList = JSON.parse(cachedNews);
+                    renderNewsTagsBar();
                     renderNewsList();
                     renderCalendar();
                 }
@@ -2197,13 +2347,13 @@
 
         function setSongMastery(songId, level, event) {
             if (event) event.stopPropagation();
+            triggerHaptic('medium');
             const map = getMasteryMap();
             map[songId] = level;
             localStorage.setItem('sbor_song_mastery', JSON.stringify(map));
             renderSongs();
             updateModalMasteryButtons(songId);
 
-            // Anonymní odeslání stavu semaforu (bez jména uživatele)
             const anonId = getAnonymousDeviceId();
             db.collection('song_mastery_stats').doc(`${songId}_${anonId}`).set({
                 songId: songId,
@@ -2245,6 +2395,7 @@
         }
 
         function changeSongSort(sortMode) {
+            triggerHaptic('light');
             localStorage.setItem('sbor_song_sort', sortMode);
             renderSongs();
         }
@@ -2262,6 +2413,7 @@
                         voices: data.voices || {},
                         accompaniments: data.accompaniments || null,
                         pdf: data.pdf || '',
+                        playCount: typeof data.playCount === 'number' ? data.playCount : 0,
                         createdAtMs: data.timestamp && data.timestamp.toMillis ? data.timestamp.toMillis() : Date.now()
                     });
                 });
@@ -2280,7 +2432,6 @@
             container.innerHTML = '';
 
             const masteryMap = getMasteryMap();
-
             let filtered = globalSongsList.filter(s => s.title.toLowerCase().includes(filter));
 
             filtered.sort((a, b) => {
@@ -2318,39 +2469,29 @@
                     </button>
                 ` : '';
 
-                // Anonymní procentuální přehled semaforu pouze v učitelském režimu
                 let teacherStatsHTML = '';
                 if (isTeacher) {
                     const st = globalMasteryStats[song.id] || { 1: 0, 2: 0, 3: 0, total: 0 };
+                    let pGreen = 0, pOrange = 0, pRed = 0, avgScore = 0;
                     if (st.total > 0) {
-                        const pGreen = Math.round((st[3] / st.total) * 100);
-                        const pOrange = Math.round((st[2] / st.total) * 100);
-                        const pRed = Math.max(0, 100 - pGreen - pOrange);
-                        const avgScore = Math.round(((st[3] * 100 + st[2] * 50 + st[1] * 0) / st.total));
-                        teacherStatsHTML = `
-                            <div class="teacher-mastery-bar-wrap" onclick="event.stopPropagation()">
-                                <div class="teacher-mastery-bar">
-                                    <div class="teacher-bar-seg green" style="width:${pGreen}%"></div>
-                                    <div class="teacher-bar-seg orange" style="width:${pOrange}%"></div>
-                                    <div class="teacher-bar-seg red" style="width:${pRed}%"></div>
-                                </div>
-                                <div class="teacher-mastery-legend">
-                                    <span>Průměr sboru: ${avgScore} %</span>
-                                    <span>🟢 ${pGreen}% • 🟠 ${pOrange}% • 🔴 ${pRed}%</span>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        teacherStatsHTML = `
-                            <div class="teacher-mastery-bar-wrap" onclick="event.stopPropagation()">
-                                <div class="teacher-mastery-bar"></div>
-                                <div class="teacher-mastery-legend">
-                                    <span>Zatím bez hodnocení členů</span>
-                                    <span>0 %</span>
-                                </div>
-                            </div>
-                        `;
+                        pGreen = Math.round((st[3] / st.total) * 100);
+                        pOrange = Math.round((st[2] / st.total) * 100);
+                        pRed = Math.max(0, 100 - pGreen - pOrange);
+                        avgScore = Math.round(((st[3] * 100 + st[2] * 50 + st[1] * 0) / st.total));
                     }
+                    teacherStatsHTML = `
+                        <div class="teacher-mastery-bar-wrap" onclick="event.stopPropagation()">
+                            <div class="teacher-mastery-bar">
+                                <div class="teacher-bar-seg green" style="width:${pGreen}%"></div>
+                                <div class="teacher-bar-seg orange" style="width:${pOrange}%"></div>
+                                <div class="teacher-bar-seg red" style="width:${pRed}%"></div>
+                            </div>
+                            <div class="teacher-mastery-legend">
+                                <span>Přehráno dětmi: <b>${song.playCount || 0}x</b></span>
+                                <span>🟢 ${pGreen}% • 🟠 ${pOrange}% • 🔴 ${pRed}%</span>
+                            </div>
+                        </div>
+                    `;
                 }
 
                 card.innerHTML = `
@@ -2437,6 +2578,7 @@
         }
 
         function openSongEditorModalForNew() {
+            triggerHaptic('light');
             document.getElementById('song-editor-modal-title').innerText = 'Přidat novou písničku';
             document.getElementById('song-editing-id').value = '';
             document.getElementById('song-input-title').value = '';
@@ -2462,6 +2604,7 @@
 
         function openSongEditorModalForEdit(songId, event) {
             if (event) event.stopPropagation();
+            triggerHaptic('light');
             const song = globalSongsList.find(s => s.id === songId);
             if (!song) return;
 
@@ -2486,6 +2629,7 @@
         }
 
         function closeSongEditorModal() {
+            triggerHaptic('light');
             document.getElementById('song-editor-modal').classList.remove('active');
         }
 
@@ -2512,6 +2656,7 @@
         }
 
         async function uploadAndSaveSongToSupabase() {
+            triggerHaptic('medium');
             const editingId = document.getElementById('song-editing-id').value;
             const title = document.getElementById('song-input-title').value.trim();
             const note = document.getElementById('song-input-note').value.trim();
@@ -2538,6 +2683,7 @@
 
                 if (!editingId) {
                     songData.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+                    songData.playCount = 0;
                 }
 
                 for (let key in uploadedFiles) {
@@ -2592,8 +2738,9 @@
             }, 'Smazat písničku');
         }
 
-        // === AI ASISTENT PRO AKTUALITY (RYCHLÝ + ZNÁ PÍSNĚ I MAPY) ===
+        // === AI ASISTENT PRO AKTUALITY ===
         async function runAiAssistant(event) {
+            triggerHaptic('medium');
             const surovyVstup = document.getElementById('ai-surovy-vstup').value.trim();
             if (!surovyVstup) {
                 showAppAlert('Nejprve napiš krátkou poznámku pro AI asistenta!');
@@ -2622,10 +2769,10 @@ Zpracuj zadání učitele: "${surovyVstup}".
 Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
 [NADPIS] Krátký výstižný nadpis
 [STITEK] Jednoslovná kategorie (např. ZKOUŠKA, KONCERT, SOUSTŘEDĚNÍ, INFO)
-[DATUM] POUZE datum DD.MM.YYYY (např. 15.12.2026), pokud v zadání datum není, nech úplně prázdné (kdyžtak pochop z kontextu, že pokud učitel řekne, že zkouška nebude, tak datum bude nejbližší datum zkoušky, normálně jsou zkoušky ve čtvrtek 16:00–17:30 a v pondělí 16:00–17:30, takže si dopočítej datum)
+[DATUM] POUZE datum DD.MM.YYYY (např. 15.12.2026), pokud v zadání datum není, nech úplně prázdné
 [MAPA] Pokud je v zadání místo konání nebo odkaz na mapu, napiš sem přesný název místa/města nebo URL odkaz pro Google Mapy, jinak nech prázdné
 [STRUCNY] Krátká jedna věta na kartu aktuality
-[DETAIL] Přehledný a přátelský HTML text pro zpěváky )normálně jsou zkoušky ve čtvrtek 16:00–17:30 a v pondělí 16:00–17:30 tak si kdyžtak dopočítej datum kdž ti dá někdo, ze zitra neni zkouska nebo priste nebude zkouska znamena to ze to bude ten nejblizsi datum(používej <b style="color:var(--primary);">tučné</b>, odrážky • nebo přehlednou časovou osu programu s proužkem vlevo). Pokud učitel zmiňuje některou píseň ze seznamu nebo chce tlačítko na přehrání písně, vlož toto tlačítko: <button type="button" class="song-link-btn-inline" onclick="openSongByName('PŘESNÝ_NÁZEV_PÍSNĚ')">Pustit: PŘESNÝ_NÁZEV_PÍSNĚ</button>`;
+[DETAIL] Přehledný a přátelský HTML text pro zpěváky (používej <b style="color:var(--primary);">tučné</b>, odrážky •). Pokud učitel zmiňuje některou píseň ze seznamu nebo chce tlačítko na přehrání písně, vlož toto tlačítko: <button type="button" class="song-link-btn-inline" data-song-title="PŘESNÝ_NÁZEV_PÍSNĚ" onclick="openSongByName(this.getAttribute('data-song-title'))">Pustit: PŘESNÝ_NÁZEV_PÍSNĚ</button>`;
 
                 const response = await ai.models.generateContent({
                     model: 'gemma-4-31b-it',
@@ -2659,7 +2806,12 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
                 document.getElementById('editor-date').value = datumValue;
                 if (mapaValue) document.getElementById('editor-map').value = mapaValue;
                 if (strucnyMatch) document.getElementById('editor-short').value = strucnyMatch[1].trim();
-                if (detailMatch) document.getElementById('editor-full').value = detailMatch[1].trim();
+                if (detailMatch) {
+                    const parsedDetail = detailMatch[1].trim();
+                    document.getElementById('editor-full').value = parsedDetail;
+                    document.getElementById('editor-full-code').value = parsedDetail;
+                    autoResizeTextarea(document.getElementById('editor-full'));
+                }
             } catch (err) {
                 showAppAlert(translateErrorToCzech(err), 'AI Asistent');
             } finally {
@@ -2668,7 +2820,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             }
         }
 
-        // === AKTUALITY S ŘAZENÍM ŠIPKAMI PRO UČITELE ===
+        // === AKTUALITY S VODOROVNÝM FILTREM ŠTÍTKŮ ===
         function listenToNews() {
             db.collection("news").onSnapshot(snapshot => {
                 const items = [];
@@ -2679,25 +2831,23 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
                     const d = doc.data();
                     const eventDateStr = d.eventDate || '';
 
-                    // Automatické smazání, pokud je 3 dny po datu akce
                     if (eventDateStr) {
                         const evDate = parseCzechDate(eventDateStr);
                         if (evDate) {
                             evDate.setHours(0, 0, 0, 0);
                             const limitDate = new Date(evDate);
-                            limitDate.setDate(limitDate.getDate() + 3); // 3 dny po akci
+                            limitDate.setDate(limitDate.getDate() + 3);
 
                             if (today > limitDate) {
-                                // Uplynulo víc než 3 dny od akce -> smažeme z databáze
                                 db.collection("news").doc(doc.id).delete().catch(() => {});
-                                return; // Přeskočíme tuto aktualitu, aby se už nenačetla
+                                return;
                             }
                         }
                     }
 
                     items.push({
                         id: doc.id,
-                        tag: d.tag || 'AKTUALITA',
+                        tag: (d.tag || 'AKTUALITA').toUpperCase().trim(),
                         eventDate: d.eventDate || '',
                         title: d.title || '',
                         shortDesc: d.shortDesc || '',
@@ -2719,6 +2869,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
 
                 globalNewsList = items;
                 localStorage.setItem('sbor_cache_news', JSON.stringify(globalNewsList));
+                renderNewsTagsBar();
                 renderNewsList();
                 renderCalendar();
             }, () => {
@@ -2726,18 +2877,50 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             });
         }
 
+        function renderNewsTagsBar() {
+            const bar = document.getElementById('news-tags-filter-bar');
+            
+            // Zachováme první tlačítko „Vše“
+            bar.innerHTML = `<button class="tool-btn ${currentSelectedNewsTag === 'VŠECHNY' ? 'active' : ''}" onclick="filterNewsByTag('VŠECHNY', this)" style="border-radius: 20px; padding: 6px 14px;">Vše</button>`;
+
+            // Získat unikátní štítky
+            const uniqueTags = [...new Set(globalNewsList.map(item => item.tag))].filter(Boolean);
+            
+            uniqueTags.forEach(tag => {
+                const isActive = currentSelectedNewsTag === tag;
+                const btn = document.createElement('button');
+                btn.className = 'tool-btn ' + (isActive ? 'active' : '');
+                btn.style.cssText = 'border-radius: 20px; padding: 6px 14px; white-space: nowrap;';
+                btn.innerText = tag;
+                btn.onclick = () => filterNewsByTag(tag, btn);
+                bar.appendChild(btn);
+            });
+        }
+
+        function filterNewsByTag(tag, btnEl) {
+            triggerHaptic('light');
+            currentSelectedNewsTag = tag;
+            document.querySelectorAll('#news-tags-filter-bar .tool-btn').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            renderNewsList();
+        }
+
         function renderNewsList() {
             const newsContainer = document.getElementById('news-grid-container');
             newsContainer.innerHTML = '';
 
-            if (globalNewsList.length === 0) {
-                newsContainer.innerHTML = '<div class="card glass"><p>Zatím zde nejsou žádné aktuality.</p></div>';
+            const filteredNews = currentSelectedNewsTag === 'VŠECHNY' 
+                ? globalNewsList 
+                : globalNewsList.filter(item => item.tag === currentSelectedNewsTag);
+
+            if (filteredNews.length === 0) {
+                newsContainer.innerHTML = '<div class="card glass"><p>Zatím zde nejsou žádné aktuality v této kategorii.</p></div>';
                 return;
             }
 
             const isTeacher = localStorage.getItem('sbor_is_teacher') === 'true';
 
-            globalNewsList.forEach((item, index) => {
+            filteredNews.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = 'card glass clickable';
                 
@@ -2747,7 +2930,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
                         <button class="btn-news-action" onclick="moveNewsItem(${index}, -1, event)" title="Posunout výše">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
                         </button>` : '';
-                    const downBtn = index < globalNewsList.length - 1 ? `
+                    const downBtn = index < filteredNews.length - 1 ? `
                         <button class="btn-news-action" onclick="moveNewsItem(${index}, 1, event)" title="Posunout níže">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                         </button>` : '';
@@ -2775,7 +2958,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
 
                 card.onclick = (e) => {
                     if (e.target.closest('.card-actions-absolute')) return;
-                    openNewsModal(item.title, item.fullDesc, item.mapLink);
+                    openNewsModalFromObj(item);
                 };
 
                 newsContainer.appendChild(card);
@@ -2784,6 +2967,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
 
         async function moveNewsItem(index, direction, event) {
             event.stopPropagation();
+            triggerHaptic('light');
             const targetIndex = index + direction;
             if (targetIndex < 0 || targetIndex >= globalNewsList.length) return;
 
@@ -2876,6 +3060,10 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             const totalDays = new Date(year, month + 1, 0).getDate();
             const prevTotalDays = new Date(year, month, 0).getDate();
 
+            const todayReal = new Date();
+            const isCurrentRealMonth = todayReal.getFullYear() === year && todayReal.getMonth() === month;
+            const todayDateNum = todayReal.getDate();
+
             let monthlyEventsCount = 0;
             let eventDatesMap = {};
 
@@ -2906,6 +3094,11 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
                 const cell = document.createElement('div');
                 cell.className = 'calendar-day';
                 cell.innerText = day;
+
+                // Zvýraznění dneška šedým designem
+                if (isCurrentRealMonth && day === todayDateNum) {
+                    cell.classList.add('today-highlight');
+                }
 
                 if (eventDatesMap[day]) {
                     cell.classList.add('has-event');
@@ -2943,11 +3136,51 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function changeMonth(direction) {
+            triggerHaptic('light');
             currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
             renderCalendar();
         }
 
+        // === EXPORT AKCE DO KALENDÁŘE V TELEFONU (.ics) ===
+        function exportEventToPhoneCalendar(title, dateStr, desc) {
+            triggerHaptic('medium');
+            const evDate = parseCzechDate(dateStr);
+            if (!evDate) {
+                showAppAlert('Datum akce není ve správném formátu pro export.');
+                return;
+            }
+
+            const yyyy = evDate.getFullYear();
+            const mm = String(evDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(evDate.getDate()).padStart(2, '0');
+            const dateFormatted = `${yyyy}${mm}${dd}`;
+
+            const icsContent = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//Zdaracek PWA//CS",
+                "BEGIN:VEVENT",
+                `SUMMARY:${title}`,
+                `DESCRIPTION:${desc.replace(/<[^>]*>?/gm, '')}`,
+                `DTSTART;VALUE=DATE:${dateFormatted}`,
+                `DTEND;VALUE=DATE:${dateFormatted}`,
+                "END:VEVENT",
+                "END:VCALENDAR"
+            ].join("\r\n");
+
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${title.replace(/[^a-zA-Z0-9]/g, '_')}.ics`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         function verifyTeacherPassword() {
+            triggerHaptic('medium');
             const pwd = document.getElementById('input-teacher-password').value.trim();
             const status = document.getElementById('teacher-auth-status');
             
@@ -2966,6 +3199,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function logoutTeacher() {
+            triggerHaptic('medium');
             localStorage.setItem('sbor_is_teacher', 'false');
             document.getElementById('input-teacher-password').value = '';
             document.getElementById('teacher-auth-status').innerText = '';
@@ -2992,16 +3226,19 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             const notifSetting = localStorage.getItem('sbor_notif_enabled') !== 'false';
             const calSetting = localStorage.getItem('sbor_cal_enabled') !== 'false';
             const practiceSetting = localStorage.getItem('sbor_practice_enabled') !== 'false';
+            const hapticsSetting = localStorage.getItem('sbor_haptics_enabled') !== 'false';
 
             document.getElementById('settings-notifications-toggle').checked = notifSetting;
             document.getElementById('settings-calendar-toggle').checked = calSetting;
             document.getElementById('settings-practice-toggle').checked = practiceSetting;
+            document.getElementById('settings-haptics-toggle').checked = hapticsSetting;
 
             updateCalendarVisibility(calSetting);
             updatePracticeVisibility(practiceSetting);
         }
 
         function toggleSetting(type, checkbox) {
+            triggerHaptic('light');
             if (type === 'notifications') {
                 localStorage.setItem('sbor_notif_enabled', checkbox.checked ? 'true' : 'false');
                 if (checkbox.checked) {
@@ -3013,6 +3250,8 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             } else if (type === 'practice') {
                 localStorage.setItem('sbor_practice_enabled', checkbox.checked ? 'true' : 'false');
                 updatePracticeVisibility(checkbox.checked);
+            } else if (type === 'haptics') {
+                localStorage.setItem('sbor_haptics_enabled', checkbox.checked ? 'true' : 'false');
             }
         }
 
@@ -3036,8 +3275,184 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             }
         }
 
-        // === EDITOR AKTUALIT (BEZPEČNÝ PRO TLAČÍTKA I GOOGLE MAPY) ===
+       function checkResponsiveEditor() {
+            const isDesktop = window.innerWidth > 768;
+            const previewPane = document.getElementById('editor-preview-pane');
+            const codePane = document.getElementById('editor-code-pane');
+            const tabsBar = document.getElementById('editor-tabs-bar');
+
+            if (isDesktop) {
+                // Na PC ukážeme oba panely vedle sebe a schováme přepínací tlačítka záložek
+                previewPane.style.display = 'flex';
+                codePane.style.display = 'flex';
+                if (tabsBar) tabsBar.style.display = 'none';
+            } else {
+                // Na mobilu zapneme záložkový režim (výchozí kód)
+                if (tabsBar) tabsBar.style.display = 'flex';
+                switchEditorMode('code');
+            }
+        }
+
+        // Spustit při načtení a při změně velikosti okna
+        window.addEventListener('resize', checkResponsiveEditor);
+
+        function switchEditorMode(mode) {
+            if (window.innerWidth > 768) return; // Na PC se přepínat nemusí
+            triggerHaptic('light');
+            const previewPane = document.getElementById('editor-preview-pane');
+            const codePane = document.getElementById('editor-code-pane');
+            const btnPreview = document.getElementById('tab-btn-preview');
+            const btnCode = document.getElementById('tab-btn-code');
+
+            if (mode === 'preview') {
+                previewPane.style.display = 'flex';
+                codePane.style.display = 'none';
+                btnPreview.classList.add('active');
+                btnCode.classList.remove('active');
+            } else {
+                previewPane.style.display = 'flex'; // Aby po přepnutí na mobilu nezmizel
+                codePane.style.display = 'flex';
+                btnPreview.classList.remove('active');
+                btnCode.classList.add('active');
+                autoResizeTextarea(document.getElementById('editor-full-code'));
+            }
+        }
+
+        function syncCodeToPreview() {
+            const textarea = document.getElementById('editor-full-code');
+            const previewRender = document.getElementById('editor-preview-render');
+            const hiddenFull = document.getElementById('editor-full');
+            
+            if (!textarea || !previewRender) return;
+
+            const codeVal = textarea.value;
+            
+            // Uložíme si aktuální pozici posuvníku (scrollu) v náhledu, aby neuskákal
+            const currentScrollTop = previewRender.scrollTop;
+            
+            previewRender.innerHTML = codeVal;
+            if (hiddenFull) hiddenFull.value = codeVal;
+            
+            // Vrátíme scroll v náhledu přesně tam, kde byl
+            previewRender.scrollTop = currentScrollTop;
+        }
+
+        function insertFormat(type, value = '') {
+            triggerHaptic('light');
+            const textarea = document.getElementById('editor-full-code');
+            if (!textarea) return;
+
+            // Pamatujeme si aktuální pozici scrollu v textarea, aby se stránka neposunula nahoru
+            const scrollPos = textarea.scrollTop;
+
+            const start = textarea.selectionStart !== undefined ? textarea.selectionStart : textarea.value.length;
+            const end = textarea.selectionEnd !== undefined ? textarea.selectionEnd : textarea.value.length;
+            const text = textarea.value;
+            const selectedText = text.substring(start, end) || 'text';
+
+            let replacement = '';
+            if (type === 'bold') {
+                replacement = `<b style="color:var(--primary);">${selectedText}</b>`;
+            } else if (type === 'underline') {
+                replacement = `<u>${selectedText}</u>`;
+            } else if (type === 'bullet') {
+                replacement = `\n• `;
+            }
+
+            textarea.value = text.substring(0, start) + replacement + text.substring(end);
+            
+            // Synchronizujeme náhled
+            syncCodeToPreview();
+            
+            // Obnovíme pozici kurzoru a hlavně VRÁTÍME SCROLL na původní místo
+            textarea.focus();
+            const newCursorPos = start + replacement.length;
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
+            textarea.scrollTop = scrollPos; // <--- Tohle zabrání skákání okna nahoru!
+        }
+        // Bezpečné navázání živého náhledu bez skákání stránky
+        document.addEventListener('DOMContentLoaded', () => {
+            const codeTextarea = document.getElementById('editor-full-code');
+            if (codeTextarea) {
+                codeTextarea.addEventListener('input', () => {
+                    // Pamatujeme si přesnou pozici scrollu POUZE uvnitř textarey a náhledu
+                    const codeScroll = codeTextarea.scrollTop;
+                    const previewRender = document.getElementById('editor-preview-render');
+                    const previewScroll = previewRender ? previewRender.scrollTop : 0;
+
+                    // Aktualizace obsahu
+                    syncCodeToPreview();
+
+                    // Vrátíme pozice scrollu zpět na místo, celé okno modalu se ani nehne
+                    codeTextarea.scrollTop = codeScroll;
+                    if (previewRender) previewRender.scrollTop = previewScroll;
+                });
+            }
+        });
+
+        function autoResizeTextarea(textarea) {
+            if (!textarea) return;
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight + 10) + 'px';
+        }
+
+        function openDatePickerModal() {
+            triggerHaptic('light');
+            currentPickerDate = new Date();
+            renderDatePickerGrid();
+            document.getElementById('date-picker-modal').classList.add('active');
+        }
+
+        function closeDatePickerModal() {
+            triggerHaptic('light');
+            document.getElementById('date-picker-modal').classList.remove('active');
+        }
+
+        function changePickerMonth(direction) {
+            triggerHaptic('light');
+            currentPickerDate.setMonth(currentPickerDate.getMonth() + direction);
+            renderDatePickerGrid();
+        }
+
+        function renderDatePickerGrid() {
+            const year = currentPickerDate.getFullYear();
+            const month = currentPickerDate.getMonth();
+            const monthNames = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
+            document.getElementById('picker-month-title').innerText = `${monthNames[month]} / ${year}`;
+
+            const grid = document.getElementById('picker-days-grid');
+            grid.innerHTML = '';
+
+            const firstDayIndex = (new Date(year, month, 1).getDay() + 6) % 7;
+            const totalDays = new Date(year, month + 1, 0).getDate();
+            const prevTotalDays = new Date(year, month, 0).getDate();
+
+            for (let i = firstDayIndex; i > 0; i--) {
+                const dayNum = prevTotalDays - i + 1;
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day other-month';
+                cell.innerText = dayNum;
+                grid.appendChild(cell);
+            }
+
+            for (let day = 1; day <= totalDays; day++) {
+                const cell = document.createElement('div');
+                cell.className = 'calendar-day';
+                cell.innerText = day;
+                cell.onclick = () => {
+                    triggerHaptic('medium');
+                    const dd = String(day).padStart(2, '0');
+                    const mm = String(month + 1).padStart(2, '0');
+                    const yyyy = year;
+                    document.getElementById('editor-date').value = `${dd}.${mm}.${yyyy}`;
+                    closeDatePickerModal();
+                };
+                grid.appendChild(cell);
+            }
+        }
+
         function openEditorModalForNew() {
+            triggerHaptic('light');
             document.getElementById('editor-modal-title').innerText = 'Přidat novou aktualitu';
             document.getElementById('ai-surovy-vstup').value = '';
             document.getElementById('editor-editing-id').value = '';
@@ -3047,11 +3462,15 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             document.getElementById('editor-title').value = '';
             document.getElementById('editor-short').value = '';
             document.getElementById('editor-full').value = '';
+            document.getElementById('editor-full-code').value = '';
+            
             document.getElementById('editor-modal').classList.add('active');
+            syncCodeToPreview(); // <--- Tady to hned aktualizuje náhled
         }
 
         function openEditorModalForEditById(id, event) {
             if (event) event.stopPropagation();
+            triggerHaptic('light');
             const item = globalNewsList.find(n => n.id === id);
             if (!item) return;
 
@@ -3064,14 +3483,19 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             document.getElementById('editor-title').value = item.title || '';
             document.getElementById('editor-short').value = item.shortDesc || '';
             document.getElementById('editor-full').value = item.fullDesc || '';
+            document.getElementById('editor-full-code').value = item.fullDesc || '';
+            
             document.getElementById('editor-modal').classList.add('active');
+            syncCodeToPreview(); // <--- A tady taky, aby se načtený text hned zobrazil v náhledu
         }
 
         function closeEditorModal() {
+            triggerHaptic('light');
             document.getElementById('editor-modal').classList.remove('active');
         }
 
         function openInsertSongLinkModal() {
+            triggerHaptic('light');
             const select = document.getElementById('insert-song-select');
             select.innerHTML = '';
 
@@ -3097,10 +3521,12 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function closeInsertSongLinkModal() {
+            triggerHaptic('light');
             document.getElementById('insert-song-link-modal').classList.remove('active');
         }
 
         function confirmInsertSongLink() {
+            triggerHaptic('medium');
             const songTitle = document.getElementById('insert-song-select').value;
             const btnLabel = document.getElementById('insert-song-btn-label').value.trim() || `Pustit: ${songTitle}`;
             const safeSongAttr = songTitle.replace(/"/g, '&quot;');
@@ -3112,14 +3538,87 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
 
             const btnHTML = `<button type="button" class="song-link-btn-inline" data-song-title="${safeSongAttr}" onclick="openSongByName(this.getAttribute('data-song-title'))">${btnLabel}</button>`;
             textarea.value = text.substring(0, start) + btnHTML + text.substring(end);
+            syncEditorContent('preview');
             closeInsertSongLinkModal();
+            autoResizeTextarea(textarea);
             textarea.focus();
         }
 
-        function insertFormat(type, value = '') {
+        function openInsertLinkModal() {
+            triggerHaptic('light');
+            document.getElementById('insert-link-url').value = '';
+            document.getElementById('insert-link-text').value = '';
+            document.getElementById('insert-link-modal').classList.add('active');
+        }
+
+        function closeInsertLinkModal() {
+            triggerHaptic('light');
+            document.getElementById('insert-link-modal').classList.remove('active');
+        }
+
+        function confirmInsertLink() {
+            triggerHaptic('medium');
+            const url = document.getElementById('insert-link-url').value.trim();
+            const textLabel = document.getElementById('insert-link-text').value.trim() || 'Odkaz';
+            if (!url) {
+                showAppAlert('Zadej URL adresu odkazu.');
+                return;
+            }
+
             const textarea = document.getElementById('editor-full');
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
+            const linkHTML = `<a href="${url}" target="_blank" class="song-link-btn-inline" style="text-decoration:none;">${textLabel}</a>`;
+            textarea.value += ' ' + linkHTML;
+            syncEditorContent('preview');
+            closeInsertLinkModal();
+            autoResizeTextarea(textarea);
+        }
+
+        function openInsertYoutubeModal() {
+            triggerHaptic('light');
+            document.getElementById('insert-youtube-url').value = '';
+            document.getElementById('insert-youtube-modal').classList.add('active');
+        }
+
+        function closeInsertYoutubeModal() {
+            triggerHaptic('light');
+            document.getElementById('insert-youtube-modal').classList.remove('active');
+        }
+
+        function confirmInsertYoutube() {
+            triggerHaptic('medium');
+            let url = document.getElementById('insert-youtube-url').value.trim();
+            if (!url) {
+                showAppAlert('Zadej odkaz na YouTube video.');
+                return;
+            }
+
+            let embedUrl = url;
+            if (url.includes('watch?v=')) {
+                embedUrl = url.replace('watch?v=', 'embed/');
+            } else if (url.includes('youtu.be/')) {
+                embedUrl = url.replace('youtu.be/', 'www.youtube.com/embed/');
+            }
+
+            const textarea = document.getElementById('editor-full');
+            const ytHTML = `<div style="margin:15px 0; border-radius:16px; overflow:hidden; aspect-ratio:16/9;"><iframe src="${embedUrl}" width="100%" height="100%" style="border:0;" allowfullscreen></iframe></div>`;
+            textarea.value += ' ' + ytHTML;
+            syncEditorContent('preview');
+            closeInsertYoutubeModal();
+            autoResizeTextarea(textarea);
+        }
+
+        function insertFormat(type, value = '') {
+            triggerHaptic('light');
+            
+            // Cílíme přímo na textarea v kódu
+            const textarea = document.getElementById('editor-full-code');
+            if (!textarea) return;
+
+            // Ujistíme se, že je prvek aktivní
+            textarea.focus();
+
+            const start = textarea.selectionStart !== undefined ? textarea.selectionStart : textarea.value.length;
+            const end = textarea.selectionEnd !== undefined ? textarea.selectionEnd : textarea.value.length;
             const text = textarea.value;
             const selectedText = text.substring(start, end) || 'text';
 
@@ -3130,27 +3629,22 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
                 replacement = `<u>${selectedText}</u>`;
             } else if (type === 'bullet') {
                 replacement = `\n• `;
-            } else if (type === 'size') {
-                if (!value) return;
-                let fontSize = '0.95rem';
-                if (value === 'small') fontSize = '0.75rem';
-                if (value === 'large') fontSize = '1.25rem';
-                replacement = `<span style="font-size: ${fontSize};">${selectedText}</span>`;
-                document.getElementById('tool-size').value = '';
-            } else if (type === 'font') {
-                if (!value) return;
-                let fontFamily = 'sans-serif';
-                if (value === 'serif') fontFamily = 'Georgia, serif';
-                if (value === 'monospace') fontFamily = 'Courier New, monospace';
-                replacement = `<span style="font-family: ${fontFamily};">${selectedText}</span>`;
-                document.getElementById('tool-font').value = '';
             }
 
+            // Vložíme text na pozici kurzoru
             textarea.value = text.substring(0, start) + replacement + text.substring(end);
-            textarea.focus();
+            
+            // Okamžitě synchronizujeme do náhledu i skrytého pole
+            syncEditorContent('code');
+            autoResizeTextarea(textarea);
+            
+            // Vrátíme kurzor za nově vložený text
+            const newCursorPos = start + replacement.length;
+            textarea.setSelectionRange(newCursorPos, newCursorPos);
         }
 
         function publishNews() {
+            triggerHaptic('medium');
             const editingId = document.getElementById('editor-editing-id').value;
             const tag = document.getElementById('editor-tag').value.trim();
             const eventDate = document.getElementById('editor-date').value.trim();
@@ -3228,6 +3722,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function openNewsModal(title, textHTML, mapLink) {
+            triggerHaptic('light');
             document.getElementById('modal-news-title').innerText = title;
             let finalContent = textHTML || '';
             if (mapLink) {
@@ -3238,12 +3733,37 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function closeNewsModal() {
+            triggerHaptic('light');
             document.getElementById('news-modal').classList.remove('active');
         }
 
+        // === SDÍLENÍ AKTUALITY (BEZ HTML TAGŮ) ===
+        function shareCurrentNews() {
+            triggerHaptic('medium');
+            const title = document.getElementById('modal-news-title').innerText;
+            const htmlContent = document.getElementById('modal-news-text').innerHTML;
+            
+            // Očištění HTML tagů
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = htmlContent;
+            const cleanText = tempDiv.textContent || tempDiv.innerText || '';
+
+            const shareData = {
+                title: title,
+                text: `${title}\n\n${cleanText}`
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(`${title}\n\n${cleanText}`).then(() => {
+                    showAppAlert('Aktualita byla zkopírována do schránky (bez HTML značek).', 'Sdílení');
+                });
+            }
+        }
+
         function switchTab(tabId, event) {
-            stopAudio();
-            stopMetronome();
+            triggerHaptic('light');
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
             document.getElementById('tab-' + tabId).classList.add('active');
@@ -3253,7 +3773,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function switchModalSection(sectionId, event) {
-            stopAudio();
+            triggerHaptic('light');
             document.querySelectorAll('.modal-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.modal-nav-item').forEach(btn => btn.classList.remove('active'));
             document.getElementById('modal-sec-' + sectionId).classList.add('active');
@@ -3261,16 +3781,19 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function openWelcomeModal() {
+            triggerHaptic('light');
             document.getElementById('welcome-modal').classList.add('active');
         }
 
         function selectVoice(btn, voice) {
+            triggerHaptic('light');
             document.querySelectorAll('.voice-btn').forEach(b => b.classList.remove('selected'));
             btn.classList.add('selected');
             selectedVoiceGroup = voice;
         }
 
         function saveWelcomeData() {
+            triggerHaptic('medium');
             const name = document.getElementById('input-name').value.trim();
             if (!name) { showAppAlert('Zadej prosím své jméno!'); return; }
             if (!selectedVoiceGroup) { showAppAlert('Vyber prosím svou hlasovou skupinu!'); return; }
@@ -3290,11 +3813,13 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function toggleTeacherMode(checkbox) {
+            triggerHaptic('light');
             localStorage.setItem('sbor_teacher_mode', checkbox.checked ? 'true' : 'false');
         }
 
-        // === RYCHLOST PŘEHRÁVÁNÍ AUDIA (PO 0.05 NEBO ČÍSLO DO RÁMEČKU) ===
+        // === RYCHLOST PŘEHRÁVÁNÍ AUDIA ===
         function toggleSpeedPopover() {
+            triggerHaptic('light');
             document.getElementById('speed-popover-panel').classList.toggle('open');
         }
 
@@ -3316,7 +3841,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             return `
                 <div class="player-box" id="${playerId}">
                     <div class="player-controls">
-                        <button class="btn-play-mini" onclick="togglePlayer('${src}', '${playerId}')">
+                        <button class="btn-play-mini" onclick="togglePlayer('${src}', '${playerId}', '${title.replace(/'/g, "\\'")}')">
                             <svg class="play-icon-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
                         </button>
                         <div class="player-info-text">${title}</div>
@@ -3333,6 +3858,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function openSongModal(song) {
+            triggerHaptic('light');
             stopAudio();
             currentOpenedSongId = song.id;
             updateModalMasteryButtons(song.id);
@@ -3407,45 +3933,89 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function closeSongModal() {
-            stopAudio();
+            triggerHaptic('light');
+            // ZDE JSME SMAZALI stopAudio(); - díky tomu hudba hraje dál!
             currentOpenedSongId = null;
             document.getElementById('song-modal').classList.remove('active');
         }
 
-        async function togglePlayer(src, playerId) {
+        // === GLOBÁLNÍ PLOVOUCÍ MINI PŘEHRAVAČ ===
+        function updateGlobalMiniPlayerVisibility(show, title = '') {
+            const mini = document.getElementById('global-mini-player');
+            const dockWrap = document.getElementById('main-nav-dock-wrapper');
+            if (show) {
+                mini.style.display = 'flex';
+                document.getElementById('global-mini-title').innerText = title;
+                if (dockWrap) dockWrap.style.bottom = '76px'; // Nadzvedne spodní lištu nahoru
+            } else {
+                mini.style.display = 'none';
+                if (dockWrap) dockWrap.style.bottom = '22px'; // Vrátí spodní lištu dolů
+            }
+        }
+
+        function toggleGlobalMiniPlayPause() {
+            triggerHaptic('medium');
+            if (!audioObject.paused) {
+                audioObject.pause();
+                document.getElementById('global-mini-play-svg').innerHTML = '<path d="M8 5v14l11-7z"/>';
+                clearInterval(updateInterval);
+            } else {
+                audioObject.play().then(() => {
+                    document.getElementById('global-mini-play-svg').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                });
+            }
+        }
+
+        async function togglePlayer(src, playerId, songTitle) {
+            triggerHaptic('medium');
             const playerBox = document.getElementById(playerId);
-            const playSvg = playerBox.querySelector('.play-icon-svg');
-            const scrubber = playerBox.querySelector('.scrubber');
-            const timeCurrent = playerBox.querySelector('.time-current');
-            const timeTotal = playerBox.querySelector('.time-total');
+            const playSvg = playerBox ? playerBox.querySelector('.play-icon-svg') : null;
+            const scrubber = playerBox ? playerBox.querySelector('.scrubber') : null;
+            const timeCurrent = playerBox ? playerBox.querySelector('.time-current') : null;
+            const timeTotal = playerBox ? playerBox.querySelector('.time-total') : null;
 
             if (currentPlayingPlayer === playerId && !audioObject.paused) {
                 audioObject.pause();
-                playSvg.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                if (playSvg) playSvg.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                document.getElementById('global-mini-play-svg').innerHTML = '<path d="M8 5v14l11-7z"/>';
                 clearInterval(updateInterval);
                 return;
             }
 
             stopAudio();
             currentPlayingPlayer = playerId;
+            currentPlayingSongTitle = songTitle;
+            
+            // Aktivace mini přehrávače dole
+            updateGlobalMiniPlayerVisibility(true, songTitle);
 
             const playableSrc = await getPlayableUrl(src);
             audioObject.src = playableSrc;
             audioObject.playbackRate = currentPlaybackSpeed;
 
             audioObject.onloadedmetadata = () => {
-                scrubber.max = audioObject.duration;
-                timeTotal.innerText = formatTime(audioObject.duration);
+                if (scrubber) scrubber.max = audioObject.duration;
+                if (timeTotal) timeTotal.innerText = formatTime(audioObject.duration);
                 audioObject.playbackRate = currentPlaybackSpeed;
             };
 
             audioObject.play().then(() => {
                 audioObject.playbackRate = currentPlaybackSpeed;
-                playSvg.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                if (playSvg) playSvg.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+                document.getElementById('global-mini-play-svg').innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+
                 updateInterval = setInterval(() => {
                     if (!audioObject.paused) {
-                        scrubber.value = audioObject.currentTime;
-                        timeCurrent.innerText = formatTime(audioObject.currentTime);
+                        if (scrubber) scrubber.value = audioObject.currentTime;
+                        if (timeCurrent) timeCurrent.innerText = formatTime(audioObject.currentTime);
+                        
+                        // Aktualizace času v mini přehrávači dole
+                        const curStr = formatTime(audioObject.currentTime);
+                        const totStr = formatTime(audioObject.duration || 0);
+                        const miniTimeEl = document.getElementById('global-mini-time');
+                        if (miniTimeEl) {
+                            miniTimeEl.innerText = `${curStr} / ${totStr}`;
+                        }
                     }
                 }, 200);
             }).catch(err => {
@@ -3474,6 +4044,31 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             audioObject.pause();
             audioObject.currentTime = 0;
             clearInterval(updateInterval);
+
+            // Skrytí mini přehrávače dole
+            updateGlobalMiniPlayerVisibility(false);
+
+            if (currentPlayingPlayer) {
+                const prevBox = document.getElementById(currentPlayingPlayer);
+                if (prevBox) {
+                    const prevSvg = prevBox.querySelector('.play-icon-svg');
+                    if (prevSvg) prevSvg.innerHTML = '<path d="M8 5v14l11-7z"/>';
+                    const scrubber = prevBox.querySelector('.scrubber');
+                    if (scrubber) scrubber.value = 0;
+                    const timeCurr = prevBox.querySelector('.time-current');
+                    if (timeCurr) timeCurr.innerText = "0:00";
+                }
+                currentPlayingPlayer = null;
+            }
+        }
+
+        function stopAudio() {
+            audioObject.pause();
+            audioObject.currentTime = 0;
+            clearInterval(updateInterval);
+            
+            // Tady se mini přehrávač zase schová a spodní lišta se vrátí dolů
+            updateGlobalMiniPlayerVisibility(false);
 
             if (currentPlayingPlayer) {
                 const prevBox = document.getElementById(currentPlayingPlayer);
@@ -3544,6 +4139,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function playFrequencyTone(freq, label, keyEl = null) {
+            triggerHaptic('light');
             try {
                 const ctx = getPracticeAudioContext();
                 const osc = ctx.createOscillator();
@@ -3634,7 +4230,6 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             playFrequencyTone(freq, val.toUpperCase());
         }
 
-        // Chytrý metronom a vlastní rytmy (bez semaforu)
         let metroRunning = false;
         let metroBpm = 100;
         let metroBeats = 4;
@@ -3692,6 +4287,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function selectRhythmPreset(rhythm) {
+            triggerHaptic('light');
             metroBeats = rhythm.beats;
             setMetroBpm(rhythm.bpm);
             rebuildMetroDots();
@@ -3722,10 +4318,12 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function adjustMetroBpm(delta) {
+            triggerHaptic('light');
             setMetroBpm(metroBpm + delta);
         }
 
         function tapMetroTempo() {
+            triggerHaptic('light');
             const now = Date.now();
             tapTimestamps.push(now);
             if (tapTimestamps.length > 4) tapTimestamps.shift();
@@ -3763,6 +4361,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function toggleMetronome() {
+            triggerHaptic('medium');
             const btn = document.getElementById('btn-metro-toggle');
             if (metroRunning) {
                 stopMetronome();
@@ -3784,6 +4383,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function openRhythmEditorModal() {
+            triggerHaptic('light');
             document.getElementById('rhythm-input-name').value = '';
             document.getElementById('rhythm-input-beats').value = '4';
             document.getElementById('rhythm-input-bpm').value = '100';
@@ -3791,10 +4391,12 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function closeRhythmEditorModal() {
+            triggerHaptic('light');
             document.getElementById('rhythm-editor-modal').classList.remove('active');
         }
 
         function saveNewRhythm() {
+            triggerHaptic('medium');
             const name = document.getElementById('rhythm-input-name').value.trim();
             const beats = Math.min(8, Math.max(2, parseInt(document.getElementById('rhythm-input-beats').value, 10) || 4));
             const bpm = Math.min(220, Math.max(40, parseInt(document.getElementById('rhythm-input-bpm').value, 10) || 100));
@@ -3831,6 +4433,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function setTheme(theme) {
+            triggerHaptic('light');
             localStorage.setItem('sbor_theme', theme);
             document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
             const activeBtn = document.getElementById('theme-' + theme);
@@ -3850,6 +4453,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
         }
 
         function forceAppUpdate() {
+            triggerHaptic('medium');
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.getRegistrations().then(registrations => {
                     for (let registration of registrations) {
@@ -3922,6 +4526,8 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
                         
                         const imageHTML = `<br><img src="${base64Img}" style="max-width:100%; border-radius:12px; margin:10px 0;"/><br>`;
                         textarea.value = textBefore + imageHTML + textAfter;
+                        syncEditorContent('preview');
+                        autoResizeTextarea(textarea);
                     };
                     
                     reader.readAsDataURL(blob);
@@ -3929,12 +4535,45 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
                 }
             }
         }
-        const textarea = document.querySelector('#detailInput'); // Zadej správný selektor tvého pole
+        let currentOpenedNewsItem = null;
 
-    textarea.addEventListener('input', function() {
-        this.style.height = 'auto'; // Resetuje výšku, aby se mohla zmenšit, když uživatel text smaže
-        this.style.height = (this.scrollHeight) + 'px'; // Nastaví výšku podle aktuálního množství textu
-    });
+        // Vylepšené otevírání aktuality, které si pamatuje celý objekt včetně data
+        function openNewsModalFromObj(item) {
+            triggerHaptic('light');
+            currentOpenedNewsItem = item;
+            document.getElementById('modal-news-title').innerText = item.title;
+            
+            let finalContent = item.fullDesc || '';
+            if (item.mapLink) {
+                finalContent += buildGoogleMapEmbedHTML(item.mapLink);
+            }
+            document.getElementById('modal-news-text').innerHTML = finalContent;
+
+            // Zobrazit/skrýt tlačítko kalendáře podle toho, jestli má aktualita datum
+            const calBtn = document.getElementById('modal-calendar-export-btn');
+            if (calBtn) {
+                calBtn.style.display = item.eventDate ? 'flex' : 'none';
+            }
+
+            document.getElementById('news-modal').classList.add('active');
+        }
+
+        function exportCurrentNewsToCalendar() {
+            if (!currentOpenedNewsItem || !currentOpenedNewsItem.eventDate) {
+                showAppAlert('Tato akce nemá nastavené žádné datum pro kalendář.');
+                return;
+            }
+            exportEventToPhoneCalendar(
+                currentOpenedNewsItem.title, 
+                currentOpenedNewsItem.eventDate, 
+                currentOpenedNewsItem.shortDesc
+            );
+        }
+        function seekAudio(scrubber, playerId) {
+            if (currentPlayingPlayer === playerId && audioObject) {
+                audioObject.currentTime = parseFloat(scrubber.value);
+            }
+        }
     </script>
 </body>
 </html>
