@@ -1,7 +1,9 @@
-const CACHE_NAME = 'zdaracek-v2';
+const CACHE_NAME = 'zdaracek-v3';
 const assetsToCache = [
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  './icons/icon-192.png',
+  './icons/icon-512.png'
 ];
 
 // === 1. FIREBASE PRO PUSH NOTIFIKACE ===
@@ -19,21 +21,19 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Zobrazení notifikace ve stavovém řádku, když je aplikace zavřená
 messaging.onBackgroundMessage((payload) => {
     const title = payload.notification?.title || 'Nová aktualita Žďáráček';
     const options = {
         body: payload.notification?.body || 'Podívej se, co je ve sboru nového!',
-        icon: '/icon-192.png',
-        badge: '/icon-192.png',
+        icon: './icons/icon-192.png',
+        badge: './icons/icon-192.png',
         vibrate: [200, 100, 200],
-        data: { url: '/' }
+        data: { url: './' }
     };
 
     self.registration.showNotification(title, options);
 });
 
-// Kliknutí na notifikaci otevře aplikaci
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
     event.waitUntil(
@@ -41,13 +41,12 @@ self.addEventListener('notificationclick', (event) => {
             if (clientList.length > 0) {
                 return clientList[0].focus();
             }
-            return clients.openWindow('/');
+            return clients.openWindow('./');
         })
     );
 });
 
-
-// === 2. INSTALACE A CACHOVÁNÍ (VÁŠ PŮVODNÍ KÓD) ===
+// === 2. INSTALACE A CACHOVÁNÍ ===
 self.addEventListener('install', event => {
   self.skipWaiting();
   event.waitUntil(
@@ -57,20 +56,19 @@ self.addEventListener('install', event => {
   );
 });
 
-// Aktivace a čištění staré paměti
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+        keys.filter(key => key !== CACHE_NAME && key !== 'zdaracek-offline-media-v1').map(key => caches.delete(key))
       );
     })
   );
   self.clients.claim();
 });
 
-// Strategie načítání: Pro HTML zkusit síť (kvůli aktualitám), jinak cache. Pro audio/pdf cache-first.
 self.addEventListener('fetch', event => {
+  if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
   if (event.request.mode === 'navigate' || url.pathname.endsWith('.html')) {
@@ -88,16 +86,14 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.match(event.request).then(cachedResponse => {
         if (cachedResponse) {
-          return cachedResponse; // Vrátí z paměti (funguje offline i pro audio/pdf)
+          return cachedResponse;
         }
         return fetch(event.request).then(response => {
           return caches.open(CACHE_NAME).then(cache => {
             cache.put(event.request, response.clone());
             return response;
           });
-        }).catch(() => {
-          // Zde můžeš ošetřit případ, kdy soubor není v cache a není internet
-        });
+        }).catch(() => {});
       })
     );
   }
