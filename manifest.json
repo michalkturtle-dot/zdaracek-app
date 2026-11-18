@@ -1,6 +1,7 @@
 {
   "name": "Dětský sbor Žďáráček",
   "short_name": "Žďáráček",
+  "version": "3.0.0",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
@@ -16,5 +17,29 @@
       "sizes": "512x512",
       "type": "image/png"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Aktuality",
+      "short_name": "Aktuality",
+      "description": "Zobrazit aktuality sboru",
+      "url": "./index.html#aktuality",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Audio",
+      "short_name": "Audio",
+      "description": "Písničky a nahrávky",
+      "url": "./index.html#audio",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Kalendář",
+      "short_name": "Kalendář",
+      "description": "Kalendář akcí",
+      "url": "./index.html#kalendar",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
   ]
 }
+```[cite: 6]
