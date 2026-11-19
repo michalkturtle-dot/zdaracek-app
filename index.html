@@ -1754,9 +1754,9 @@
 
             <!-- Společná lišta s tlačítky pro formátování -->
             <div class="editor-toolbar" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; margin-bottom: 10px;">
-                <button type="button" class="tool-btn" onclick="insertFormat('bold')"><b>B</b> Tučné</button>
-                <button type="button" class="tool-btn" onclick="insertFormat('underline')"><u>U</u> Podtržené</button>
-                <button type="button" class="tool-btn" onclick="insertFormat('bullet')">• Odrážka</button>
+                <button type="button" class="tool-btn" onclick="insertFormatSafe('bold')"><b>B</b> Tučné</button>
+                <button type="button" class="tool-btn" onclick="insertFormatSafe('underline')"><u>U</u> Podtržené</button>
+                <button type="button" class="tool-btn" onclick="insertFormatSafe('bullet')">• Odrážka</button>
                 <button type="button" class="tool-btn" onclick="openInsertSongLinkModal()">🎵 Vložit tlačítko písně</button>
                 <button type="button" class="tool-btn" onclick="openInsertLinkModal()">🔗 Vložit odkaz</button>
                 <button type="button" class="tool-btn" onclick="openInsertYoutubeModal()">▶️ YouTube</button>
@@ -3494,7 +3494,7 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             document.getElementById('editor-modal').classList.remove('active');
         }
 
-        function openInsertSongLinkModal() {
+function openInsertSongLinkModal() {
             triggerHaptic('light');
             const select = document.getElementById('insert-song-select');
             select.innerHTML = '';
@@ -3531,16 +3531,16 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             const btnLabel = document.getElementById('insert-song-btn-label').value.trim() || `Pustit: ${songTitle}`;
             const safeSongAttr = songTitle.replace(/"/g, '&quot;');
 
-            const textarea = document.getElementById('editor-full');
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
+            const textarea = document.getElementById('editor-full-code');
+            const start = textarea.selectionStart !== undefined ? textarea.selectionStart : textarea.value.length;
+            const end = textarea.selectionEnd !== undefined ? textarea.selectionEnd : textarea.value.length;
             const text = textarea.value;
 
             const btnHTML = `<button type="button" class="song-link-btn-inline" data-song-title="${safeSongAttr}" onclick="openSongByName(this.getAttribute('data-song-title'))">${btnLabel}</button>`;
             textarea.value = text.substring(0, start) + btnHTML + text.substring(end);
-            syncEditorContent('preview');
+            
+            syncCodeToPreview();
             closeInsertSongLinkModal();
-            autoResizeTextarea(textarea);
             textarea.focus();
         }
 
@@ -3565,12 +3565,17 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
                 return;
             }
 
-            const textarea = document.getElementById('editor-full');
+            const textarea = document.getElementById('editor-full-code');
+            const start = textarea.selectionStart !== undefined ? textarea.selectionStart : textarea.value.length;
+            const end = textarea.selectionEnd !== undefined ? textarea.selectionEnd : textarea.value.length;
+            const text = textarea.value;
+
             const linkHTML = `<a href="${url}" target="_blank" class="song-link-btn-inline" style="text-decoration:none;">${textLabel}</a>`;
-            textarea.value += ' ' + linkHTML;
-            syncEditorContent('preview');
+            textarea.value = text.substring(0, start) + linkHTML + text.substring(end);
+            
+            syncCodeToPreview();
             closeInsertLinkModal();
-            autoResizeTextarea(textarea);
+            textarea.focus();
         }
 
         function openInsertYoutubeModal() {
@@ -3599,22 +3604,29 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
                 embedUrl = url.replace('youtu.be/', 'www.youtube.com/embed/');
             }
 
-            const textarea = document.getElementById('editor-full');
+            const textarea = document.getElementById('editor-full-code');
+            const start = textarea.selectionStart !== undefined ? textarea.selectionStart : textarea.value.length;
+            const end = textarea.selectionEnd !== undefined ? textarea.selectionEnd : textarea.value.length;
+            const text = textarea.value;
+
             const ytHTML = `<div style="margin:15px 0; border-radius:16px; overflow:hidden; aspect-ratio:16/9;"><iframe src="${embedUrl}" width="100%" height="100%" style="border:0;" allowfullscreen></iframe></div>`;
-            textarea.value += ' ' + ytHTML;
-            syncEditorContent('preview');
+            textarea.value = text.substring(0, start) + ytHTML + text.substring(end);
+            
+            syncCodeToPreview();
             closeInsertYoutubeModal();
-            autoResizeTextarea(textarea);
+            textarea.focus();
         }
 
         function insertFormat(type, value = '') {
+            insertFormatSafe(type);
+        }
+
+        function insertFormatSafe(type) {
             triggerHaptic('light');
-            
-            // Cílíme přímo na textarea v kódu
             const textarea = document.getElementById('editor-full-code');
             if (!textarea) return;
 
-            // Ujistíme se, že je prvek aktivní
+            const scrollPos = textarea.scrollTop;
             textarea.focus();
 
             const start = textarea.selectionStart !== undefined ? textarea.selectionStart : textarea.value.length;
@@ -3631,16 +3643,13 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
                 replacement = `\n• `;
             }
 
-            // Vložíme text na pozici kurzoru
             textarea.value = text.substring(0, start) + replacement + text.substring(end);
             
-            // Okamžitě synchronizujeme do náhledu i skrytého pole
-            syncEditorContent('code');
-            autoResizeTextarea(textarea);
+            syncCodeToPreview();
             
-            // Vrátíme kurzor za nově vložený text
             const newCursorPos = start + replacement.length;
             textarea.setSelectionRange(newCursorPos, newCursorPos);
+            textarea.scrollTop = scrollPos;
         }
 
         function publishNews() {
@@ -4044,30 +4053,8 @@ Vrať odpověď PŘESNĚ v těchto 6 značkách (nic jiného nepřidávej):
             audioObject.pause();
             audioObject.currentTime = 0;
             clearInterval(updateInterval);
-
-            // Skrytí mini přehrávače dole
-            updateGlobalMiniPlayerVisibility(false);
-
-            if (currentPlayingPlayer) {
-                const prevBox = document.getElementById(currentPlayingPlayer);
-                if (prevBox) {
-                    const prevSvg = prevBox.querySelector('.play-icon-svg');
-                    if (prevSvg) prevSvg.innerHTML = '<path d="M8 5v14l11-7z"/>';
-                    const scrubber = prevBox.querySelector('.scrubber');
-                    if (scrubber) scrubber.value = 0;
-                    const timeCurr = prevBox.querySelector('.time-current');
-                    if (timeCurr) timeCurr.innerText = "0:00";
-                }
-                currentPlayingPlayer = null;
-            }
-        }
-
-        function stopAudio() {
-            audioObject.pause();
-            audioObject.currentTime = 0;
-            clearInterval(updateInterval);
             
-            // Tady se mini přehrávač zase schová a spodní lišta se vrátí dolů
+            // Skrytí mini přehrávače dole a vrácení spodní lišty dolů
             updateGlobalMiniPlayerVisibility(false);
 
             if (currentPlayingPlayer) {
